@@ -151,9 +151,9 @@ main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:76px;-
 </style>
 <script>try{var d=localStorage.getItem("grids.theme.v1")!=="light",h=document.documentElement;h.dataset.style="classic";h.dataset.theme=d?"dark":"light";if(d)h.classList.add("dark-theme")}catch(e){}</script>
 <style id="plug-theme-css">
+html,body,main{overscroll-behavior-y:contain}
 
-
-/* ---------- 1. CLASSIC · LIGHT (matches your light screenshots) ---------- */
+/* ---------- 1. CLASSIC · LIGHT ---------- */
 :root,[data-style="classic"][data-theme="light"]{
  --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
  --bg:#f5f7fb; --surface:#ffffff; --surface-2:#f1f5fb;
@@ -175,7 +175,7 @@ main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:76px;-
  --ring:0 0 0 3px rgba(37,99,235,.28);
 }
 
-/* ---------- 2. CLASSIC · DARK (matches your dark/gold screenshots) ---------- */
+/* ---------- 2. CLASSIC · DARK ---------- */
 [data-style="classic"][data-theme="dark"]{
  --bg:#0f1318; --surface:#151a21; --surface-2:#11151b;
  --text:#f3f5f8; --text-muted:#8b94a5; --text-faint:#5d6675;
@@ -2213,6 +2213,8 @@ document.getElementById("checkUpdate").onclick=async()=>{
 };
 document.getElementById("updateLater").onclick=()=>document.getElementById("updateNotice").classList.remove("show");
 document.getElementById("updateNow").onclick=()=>{const w=waitingWorker||swReg?.waiting;if(w)w.postMessage({type:"SKIP_WAITING"});document.getElementById("updateNotice").classList.remove("show")};
+/* PULL-TO-REFRESH DISABLED - remove these comment marks to restore*/
+/*
 let pullStartY=0,pullTracking=false,pullTriggered=false,pullRefreshing=false;
 const mainScroller=document.querySelector("main");
 mainScroller?.addEventListener("touchstart",e=>{
@@ -2232,6 +2234,7 @@ mainScroller?.addEventListener("touchend",async()=>{
   try{if(swReg)await swReg.update();}catch(_){ }
   setTimeout(()=>location.reload(),250);
 },{passive:true});
+*/
 let refreshing=false;navigator.serviceWorker?.addEventListener("controllerchange",()=>{if(refreshing)return;refreshing=true;location.reload()});
 
 /* ===================== START ===================== */
