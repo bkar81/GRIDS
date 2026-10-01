@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — GRIDS</title>
+<meta name="theme-color" content="#FFFFFF">
+<style>html[data-t=dark]{--bg:#0f1318!important;--card:#151a21!important;--border:#2a303a!important;--text:#f3f5f8!important;--dim:#8b94a5!important;--faint:#5d6675!important;--accent:#e5b04a!important}html[data-t=dark] .card{background:#151a21!important}html[data-t=dark] code{background:#20252d!important}
+:root{--bg:#F4F7FB;--card:#FFF;--border:#D7E0EC;--text:#172033;--dim:#53627A;--faint:#7B8AA2;--accent:#2563EB}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6;padding:24px 16px 48px}.wrap{max-width:720px;margin:auto}a{color:var(--accent)}h1{font-size:22px;margin:0 0 4px}.updated{color:var(--faint);font-size:13px;margin-bottom:32px}.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 2px 8px rgba(30,55,90,.06);padding:20px 22px;margin-bottom:16px}h2{font-size:14px;margin:0 0 10px;color:var(--accent)}p{margin:0 0 10px;color:var(--dim);font-size:13.5px}p:last-child{margin-bottom:0}.back{display:inline-block;margin-bottom:24px;font-size:13.5px;color:var(--faint);text-decoration:none}.back:hover{color:var(--accent)}code{background:#EEF3FA;padding:2px 6px;border-radius:5px;font-size:12.5px}
+</style>
+<script>try{if(localStorage.getItem("grids.theme.v1")!=="light")document.documentElement.dataset.t="dark"}catch(e){document.documentElement.dataset.t="dark"}</script></head>
+<body>
+<div class="wrap">
+<a class="back" href="./index.html">‹ Back to GRIDS</a>
+<h1>Privacy Policy</h1>
+<div class="updated">Last updated: October 2026</div>
+
+<div class="card"><h2>Short version</h2>
+<p>GRIDS is designed so that its application configuration is stored locally in your browser. GRIDS does not require a GRIDS account or a GRIDS-operated application server for its normal configuration and form-submission workflow. Google services are contacted when a feature that requires Google is used, such as Google authentication, Sheet access, or optional Drive synchronization.</p></div>
+
+<div class="card"><h2>What GRIDS stores locally</h2>
+<p>GRIDS stores its configuration in browser storage. This can include the Google Form link, Google Sheet link, Form title, configured Form fields, Google Form entry IDs, default values, and report configuration.</p>
+<p>The app also keeps local state needed for its optional synchronization workflow. Resetting GRIDS removes the locally stored GRIDS configuration on that device.</p></div>
+
+<div class="card"><h2>Google Form submissions</h2>
+<p>When you submit an entry from Home, the values you enter are sent to the Google Form configured by you. GRIDS does not operate the destination Google Form and does not control how Google stores or processes submitted Form responses.</p></div>
+
+<div class="card"><h2>Google Sheet access</h2>
+<p>The Report feature can read data from the Google Sheet you configure. Access requires Google authentication and the Google Sheets read-only permission used by GRIDS. GRIDS uses the Sheet data to generate the configured report in your browser.</p>
+<p>Entering a Google Sheet link by itself does not give GRIDS access to the Sheet; access is requested when a Google-connected feature requires it.</p></div>
+
+<div class="card"><h2>Google Drive sync</h2>
+<p>Drive synchronization is optional. When you explicitly connect Google and use GRIDS synchronization feature, GRIDS can read and write its own configuration file, <code>grids-settings_&lt;application name&gt;.json</code>, in your Google Drive using Google's <code>drive.file</code> permission.</p>
+<p>Your Google authentication and Drive data remain associated with your Google account. GRIDS does not use a separate GRIDS server to receive or store your Drive data.</p></div>
+
+<div class="card"><h2>Google authentication</h2>
+<p>Google authentication is used for features that require Google access, such as reading the linked Sheet or synchronizing GRIDS settings with Drive. Authentication credentials and tokens are not included in GRIDS exported JSON configuration.</p></div>
+
+<div class="card"><h2>JSON export and import</h2>
+<p>GRIDS lets you export its configuration to a JSON file for backup or transfer. Google authentication credentials and tokens are not included in the exported settings.</p></div>
+
+<div class="card"><h2>Cookies, analytics and tracking</h2>
+<p>GRIDS application code does not include an application analytics or advertising system. The application does not require cookies for its local configuration workflow. Third-party Google services used through authentication and APIs may have their own technologies, policies, and data practices.</p></div>
+
+<div class="card"><h2>Offline and PWA behavior</h2>
+<p>GRIDS can be installed as a Progressive Web App. Its service worker provides the application shell for offline use. Google-connected features naturally require the relevant Google service and network access.</p></div>
+
+<div class="card"><h2>Your control</h2>
+<p>You control the Google Form, Google Sheet, Google account, and Drive configuration that you connect to GRIDS. You can export your GRIDS configuration, import a backup, manage Google access through your Google account, or use Settings → Sync → Reset app data to clear the current Application's locally stored configuration on this device.</p></div>
+
+<div class="card"><h2>Sharing and self-hosting</h2>
+<p>A separate hosted or forked copy of GRIDS can have its own Google OAuth configuration and its own Form, Sheet, and Drive settings. Operators of separate deployments are responsible for configuring their own Google services and for complying with applicable privacy and legal requirements.</p></div>
+
+<div class="card"><h2>Applications and backups</h2><p>GRIDS can hold several Applications, each with its own settings stored in this browser. It also keeps one last-known-working copy of each Application on the device. Backup files you export (one Application or all Applications) are saved where you choose and are yours to keep safe. Google authentication tokens are never included.</p></div><div class="card"><h2>Questions</h2>
+<p>Questions about GRIDS privacy behavior can be raised through the project's published contact or repository information.</p></div>
+</div>
+</body>
+</html>
