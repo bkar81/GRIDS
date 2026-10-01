@@ -1,8 +1,11 @@
-// GRIDS service worker v1.0.1
+// GRIDS service worker v1.0.2
 // Caches the GRIDS app shell for offline use and supports the in-app
 // update prompt. Google Drive/Sheets/Forms calls are never cached.
 
-const CACHE_NAME = "grids-cache-v1.0.1";
+// All apps share one GitHub Pages origin (and one Cache Storage),
+// so every cache this app owns starts with this prefix.
+const CACHE_PREFIX = "grids-cache-";
+const CACHE_NAME = CACHE_PREFIX + "v1.0.2";
 
 const ASSETS = [
   "./",
@@ -32,7 +35,8 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== CACHE_NAME)
+            // Only GRIDS caches; never touch other apps' caches.
+            .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
             .map((key) => caches.delete(key))
         )
       )
@@ -46,6 +50,33 @@ self.addEventListener("message", (event) => {
     self.skipWaiting();
   }
 });
+
+// Look up a request ONLY in GRIDS' own cache.
+// (caches.match() would search every cache on the shared origin.)
+function ownCacheMatch(request) {
+  return caches.open(CACHE_NAME)
+    .then((cache) => cache.match(request, { ignoreSearch: true }));
+}
+
+// Always resolve with a real Response (never undefined), so the
+// page can never go blank when the network fails.
+function offlineFallback(cachedResponse, isShell) {
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  const failure = () => new Response(
+    "Offline and nothing cached yet. Please reload.",
+    { status: 503, headers: { "Content-Type": "text/plain" } }
+  );
+
+  if (!isShell) {
+    return failure();
+  }
+
+  return ownCacheMatch("./index.html")
+    .then((shell) => shell || failure());
+}
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
@@ -65,7 +96,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
+    ownCacheMatch(event.request).then((cached) => {
       // Prefer the network for the GRIDS app shell so published updates are
       // discovered promptly. If offline, fall back to the cached version.
       const isAppShell =
@@ -83,7 +114,7 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => offlineFallback(cached, isAppShell));
 
       return isAppShell ? networkFetch : (cached || networkFetch);
     })
