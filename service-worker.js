@@ -1,12 +1,15 @@
-// GRIDS service worker v1.0.0
+// GRIDS service worker v1.0.1
 // Caches the GRIDS app shell for offline use and supports the in-app
 // update prompt. Google Drive/Sheets/Forms calls are never cached.
 
-const CACHE_NAME = "grids-cache-v1.0.0";
+const CACHE_NAME = "grids-cache-v1.0.1";
 
 const ASSETS = [
   "./",
   "./index.html",
+  "./README.html",
+  "./privacy.html",
+  "./terms.html",
   "./manifest.json",
   "./pwa-192x192.png",
   "./pwa-512x512.png",
