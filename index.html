@@ -1031,12 +1031,15 @@ function formatValue(v){
   if(v===null||v===undefined||v==="")return "—";
   const n=Number(v);return Number.isFinite(n)?n.toLocaleString(undefined,{maximumFractionDigits:2}):String(v);
 }
+const BLANK_TOKEN="__GRIDS_BLANK__";
+const filterValueLabel=v=>v===BLANK_TOKEN?"(Blank)":v;
 function applyFilters(rows){
   const allowed=new Set(config.reportLayout.filterFields||[]);
   return rows.filter(r=>Object.entries(activeFilters).every(([fid,vals])=>{
     if(!allowed.has(fid) || !vals?.length)return true;
     const f=fieldById(fid);if(!f)return true;
-    return vals.includes(sheetValue(r,f));
+    const v=sheetValue(r,f);
+    return vals.includes(v)||(vals.includes(BLANK_TOKEN)&&v.trim()==="");
   }));
 }
 function rowsOrder(f,rows=reportRows){
@@ -1178,7 +1181,7 @@ function renderReportFilters(){
   if(!filterFields.length){wrap.innerHTML="";return}
   wrap.innerHTML=filterFields.map(fid=>{
     const f=fieldById(fid), vals=activeFilters[fid]||[];
-    const label=vals.length?`${f.label}: ${vals.length===1?vals[0]:vals.length+" selected"}`:`${f.label}: All`;
+    const label=vals.length?`${f.label}: ${vals.length===1?filterValueLabel(vals[0]):vals.length+" selected"}`:`${f.label}: All`;
     return `<button class="filter-chip ${vals.length?"active":""}" data-filter="${esc(fid)}">${esc(label)} ▾</button>`;
   }).join("");
   wrap.querySelectorAll("[data-filter]").forEach(btn=>{
@@ -1188,12 +1191,16 @@ function renderReportFilters(){
 async function openFilterPicker(fid){
   const f=fieldById(fid);if(!f)return;
   // Report filter values always come from the fetched Google Sheet.
-  const values=uniqueSheetValues(f);
+  const values=uniqueSheetValues(f).filter(v=>v.trim()!=="");
   const selected=new Set(activeFilters[fid]||[]);
+  // Offer "(Blank)" when this column has empty cells (or it is already selected),
+  // so records with no value can be filtered in or out.
+  const hasBlank=reportRows.some(r=>sheetValue(r,f).trim()==="")||selected.has(BLANK_TOKEN);
+  if(hasBlank)values.unshift(BLANK_TOKEN);
   const root=document.getElementById("modalRoot");
   root.innerHTML=`<div class="modal-backdrop"><div class="modal center"><h3>${esc(f.label)}</h3><p>Choose one or more values from the fetched Sheet data; All means no filter.</p>
     <label class="check-item" style="margin-bottom:7px"><input type="checkbox" id="filterAll" ${selected.size?"":"checked"}> All</label>
-    <div class="check-grid">${values.map(v=>`<label class="check-item"><input type="checkbox" class="filterOpt" value="${esc(v)}" ${selected.has(v)?"checked":""}> ${esc(v)}</label>`).join("")}</div>
+    <div class="check-grid">${values.map(v=>`<label class="check-item"><input type="checkbox" class="filterOpt" value="${esc(v)}" ${selected.has(v)?"checked":""}> ${esc(filterValueLabel(v))}</label>`).join("")}</div>
     <div class="modal-actions"><button class="btn" id="filterCancel">Cancel</button><button class="btn primary" id="filterApply">Apply</button></div>
   </div></div>`;
   const all=root.querySelector("#filterAll");
@@ -1290,7 +1297,7 @@ function renderReport(){
 
 /* ===================== COPY / CSV EXPORT ===================== */
 function activeFilterLines(){
-  return Object.entries(activeFilters).filter(([,v])=>v?.length).map(([fid,vals])=>`${fieldById(fid)?.label||fid}: ${vals.join(", ")}`);
+  return Object.entries(activeFilters).filter(([,v])=>v?.length).map(([fid,vals])=>`${fieldById(fid)?.label||fid}: ${vals.map(filterValueLabel).join(", ")}`);
 }
 function csvEscape(v){const s=String(v??"");return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}
 function exportReportCSV(){
