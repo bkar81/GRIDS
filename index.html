@@ -497,7 +497,8 @@ const EMPTY_CONFIG = {
     showSerialNumber: true,
     periodField: null,
     periodFormat: "",
-    measureAggregations: {}
+    measureAggregations: {},
+    sheetHeaders: []
   }
 };
 
@@ -539,6 +540,15 @@ function loadConfig(){
     c.reportLayout.periodFormat ??= "";
     c.reportLayout.showSerialNumber ??= true;
     c.reportLayout.measureAggregations ||= {};
+    c.reportLayout.sheetHeaders=Array.isArray(c.reportLayout.sheetHeaders)?c.reportLayout.sheetHeaders:[];
+    {
+      const rl=c.reportLayout;
+      const mig=id=>{if(!id||String(id).startsWith("col:"))return id;const f=c.fields.find(x=>x.id===id);return f?"col:"+(f.sheetHeader||f.label):id};
+      rl.rowsFields=rl.rowsFields.map(mig);rl.rowsField=rl.rowsFields[0]||null;
+      rl.columnsField=mig(rl.columnsField);rl.valueField=mig(rl.valueField);rl.periodField=mig(rl.periodField);
+      rl.filterFields=[...new Set(rl.filterFields.map(mig))];rl.filterField=rl.filterFields[0]||null;
+      const ma={};Object.entries(rl.measureAggregations).forEach(([k,v])=>ma[mig(k)]=v);rl.measureAggregations=ma;
+    }
     return c;
   }catch(e){ return clone(EMPTY_CONFIG); }
 }
@@ -575,7 +585,29 @@ function saveConfig(){
 }
 function sortFields(){ return [...config.fields].sort((a,b)=>(a.order||0)-(b.order||0)); }
 function renumberFields(){ sortFields().forEach((f,i)=>f.order=i+1); saveConfig(); }
-const fieldById=id=>config.fields.find(f=>f.id===id);
+/* Report fields are the column headers of the fetched Google Sheet (id = "col:<header>").
+   Form fields (config.fields) are still resolved first so older saved layouts keep working. */
+const COL_PREFIX="col:";
+const colId=h=>COL_PREFIX+h;
+const parseSheetNumber=v=>{const t=String(v??"").replace(/[,\s\u00A0₹$€£]/g,"");return t!==""&&Number.isFinite(Number(t))?Number(t):NaN};
+function sheetColumnHeaders(){
+  const src=(typeof reportHeaders!=="undefined"&&reportHeaders.length)?reportHeaders:(config.reportLayout?.sheetHeaders||[]);
+  const seen=new Set(),out=[];
+  src.forEach(h=>{h=String(h??"");if(h.trim()===""||seen.has(h))return;seen.add(h);out.push(h)});
+  return out;
+}
+function isNumericColumn(h){
+  let n=0,t=0;
+  for(const r of (typeof reportRows!=="undefined"?reportRows:[])){const v=r[h];if(v===undefined||String(v).trim()==="")continue;t++;if(Number.isFinite(parseSheetNumber(v)))n++}
+  return t>0&&n/t>=0.8;
+}
+function virtualField(id){
+  if(typeof id!=="string"||!id.startsWith(COL_PREFIX))return undefined;
+  const h=id.slice(COL_PREFIX.length);
+  return {id,label:h,sheetHeader:h,dataType:isNumericColumn(h)?"number":"text",options:[],defaultValues:[],virtual:true};
+}
+const fieldById=id=>config.fields.find(f=>f.id===id)||virtualField(id);
+function sheetFields(){return sheetColumnHeaders().map(h=>virtualField(colId(h)))}
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid=()=> "f_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,7);
 
@@ -987,7 +1019,7 @@ function currentColumnValues(){
   return sortDateAwareValues(vals,f);
 }
 function aggregate(rows,field,aggregation=null){
-  const nums=rows.map(r=>Number(sheetValue(r,field))).filter(n=>Number.isFinite(n));
+  const nums=rows.map(r=>parseSheetNumber(sheetValue(r,field))).filter(n=>Number.isFinite(n));
   const a=aggregation||config.reportLayout.measureAggregations?.[field.id]||config.reportLayout.aggregation||"sum";
   if(a==="count")return rows.length;
   if(a==="distinct count")return new Set(rows.map(r=>sheetValue(r,field)).filter(Boolean)).size;
@@ -1207,6 +1239,7 @@ async function fetchReportData(buttonId="fetchReport"){
     reportRows=result.rows;
     reportHeaders=result.headers;
     reportFetchedAt=new Date();
+    config.reportLayout.sheetHeaders=sheetColumnHeaders();saveConfig();
 
     if(st)st.textContent=`${reportRows.length.toLocaleString()} rows · fetched ${reportFetchedAt.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}`;
     renderReportFilters();
@@ -1788,6 +1821,13 @@ function parsePrefill(){
 function assignDetected(i,id){const d=detectedPrefill[i],f=fieldById(id);if(!d||!f)return;f.formEntryId=d.id;saveConfig();parsePrefill();renderFieldRows();toast(`${d.id} assigned to ${f.label}`)}
 
 /* ===================== REPORT SETTINGS ===================== */
+function selectHeaderOptions(selected,numericOnly=false){
+  let list=sheetFields();
+  if(numericOnly){const num=list.filter(f=>f.dataType==="number");if(num.length||reportHeaders.length)list=num}
+  let html=list.map(f=>`<option value="${esc(f.id)}" ${f.id===selected?"selected":""}>${esc(f.label)}</option>`).join("");
+  if(selected&&!list.some(f=>f.id===selected)){const f=fieldById(selected);if(f)html+=`<option value="${esc(f.id)}" selected>${esc(f.label)} (not in sheet)</option>`}
+  return html;
+}
 function selectFieldOptions(selected,filter=""){
   return sortFields().filter(f=>!filter||f.dataType===filter).map(f=>`<option value="${esc(f.id)}" ${f.id===selected?"selected":""}>${esc(f.label)}</option>`).join("");
 }
@@ -1799,7 +1839,7 @@ function getReportRowFieldIds(){
 }
 function renderRowFieldChoices(selectedIds){
   const selected=new Set(selectedIds||[]);
-  return sortFields().map(f=>`<label class="check-item"><input type="checkbox" class="report-row-field" value="${esc(f.id)}" ${selected.has(f.id)?"checked":""} ${reportHeaders.length?"":"disabled"}> ${esc(f.label||"Unnamed field")}</label>`).join("");
+  return sheetFields().map(f=>`<label class="check-item"><input type="checkbox" class="report-row-field" value="${esc(f.id)}" ${selected.has(f.id)?"checked":""} ${reportHeaders.length?"":"disabled"}> ${esc(f.label)}</label>`).join("")||`<span class="small">Fetch the Sheet data to load its column headers.</span>`;
 }
 function renderColumnValueChoices(fieldId,selectedValues){
   const f=fieldById(fieldId);
@@ -1830,14 +1870,14 @@ function renderReportSettingsTab(){
       <div class="collapsible-body">
         <div class="card" id="reportLayoutControls">
       <div class="field"><label class="report-setting-heading">Rows · select multiple</label><div class="check-grid" id="rowFields">${renderRowFieldChoices(getReportRowFieldIds())}</div><div class="field-hint">Select one or more row fields. They appear in the report from left to right after the serial number.</div></div>
-      <div class="field"><label class="report-setting-heading">Columns</label><select id="rlCols" ${fetched?"":"disabled"}><option value="">Choose</option>${selectFieldOptions(rl.columnsField)}</select></div>
+      <div class="field"><label class="report-setting-heading">Columns</label><select id="rlCols" ${fetched?"":"disabled"}><option value="">Choose</option>${selectHeaderOptions(rl.columnsField)}</select></div>
       <div class="field">
         <label>Column values · select multiple</label>
         <div class="check-grid" id="columnTicks">
           ${renderColumnValueChoices(rl.columnsField,ticks)}
         </div>
       </div>
-      <div class="field"><label class="report-setting-heading">Value (numeric field)</label><select id="rlValue" ${fetched?"":"disabled"}><option value="">Choose</option>${selectFieldOptions(rl.valueField,"number")}</select></div>
+      <div class="field"><label class="report-setting-heading">Value (numeric field)</label><select id="rlValue" ${fetched?"":"disabled"}><option value="">Choose</option>${selectHeaderOptions(rl.valueField,true)}</select></div>
       <div class="field">
         <label class="report-setting-heading">Aggregation</label>
         <select id="rlAgg" ${fetched?"":"disabled"}>
@@ -1856,13 +1896,13 @@ function renderReportSettingsTab(){
       <div class="field">
         <label class="report-setting-heading">Filters · select multiple</label>
         <div class="check-grid" id="filterFields">
-          ${sortFields().length?sortFields().map(f=>`<label class="check-item"><input type="checkbox" value="${esc(f.id)}" ${((rl.filterFields||[]).includes(f.id))?"checked":""} ${fetched?"":"disabled"}> ${esc(f.label||"Unnamed field")}</label>`).join(""):`<span class="small">No fields are configured yet.</span>`}
+          ${sheetFields().length?sheetFields().map(f=>`<label class="check-item"><input type="checkbox" value="${esc(f.id)}" ${((rl.filterFields||[]).includes(f.id))?"checked":""} ${fetched?"":"disabled"}> ${esc(f.label)}</label>`).join(""):`<span class="small">Fetch the Sheet data to load its column headers.</span>`}
         </div>
         <div class="field-hint">Select multiple filter fields. Filter values are selected in the Report view.</div>
       </div>
       <div class="field">
         <label class="report-setting-heading">Date / period field</label>
-        <select id="rlPeriod" ${fetched?"":"disabled"}><option value="">None</option>${selectFieldOptions(rl.periodField)}</select>
+        <select id="rlPeriod" ${fetched?"":"disabled"}><option value="">None</option>${selectHeaderOptions(rl.periodField)}</select>
         <div class="field-hint">When selected, GRIDS sorts this field chronologically even when the Sheet stores it as text (for example, May-26, Jun-26, Sep-26). It also enables the display format below.</div>
       </div>
       <div class="field">
@@ -1890,12 +1930,12 @@ function renderReportSettingsTab(){
 }
 function renderMeasureConfig(){
   config.reportLayout.measureAggregations ||= {};
-  const numericFields=sortFields().filter(f=>f.dataType==="number");
-  if(!numericFields.length)return `<div class="small">No numeric fields are configured yet.</div>`;
+  const numericFields=sheetFields().filter(f=>f.dataType==="number");
+  if(!numericFields.length)return `<div class="small">${reportHeaders.length?"No numeric columns were detected in the Sheet.":"Fetch the Sheet data to detect numeric columns."}</div>`;
   return numericFields.map(f=>{
     const agg=config.reportLayout.measureAggregations[f.id]||"sum";
     return `<div class="default-row">
-      <div style="flex:1;font-size:11px;font-weight:800">${esc(f.label||"Unnamed field")}</div>
+      <div style="flex:1;font-size:11px;font-weight:800">${esc(f.label)}</div>
       <select data-measure-agg="${esc(f.id)}">
         <option value="sum" ${agg==="sum"?"selected":""}>Sum</option>
         <option value="average" ${agg==="average"?"selected":""}>Average</option>
