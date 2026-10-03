@@ -443,6 +443,7 @@ async function request(url,opts={}){if(!hasToken())throw Object.assign(new Error
 const q=v=>String(v).replace(/\\/g,"\\\\").replace(/'/g,"\\'"),D="https://www.googleapis.com/drive/v3/files";
 const drive={
 async find(name){const r=await request(D+"?q="+encodeURIComponent("name='"+q(name)+"' and trashed=false")+"&orderBy=modifiedTime%20desc&fields=files(id,name,modifiedTime)&spaces=drive");return(await r.json()).files||[]},
+async list(prefix){let out=[],pt="";do{const r=await request(D+"?q="+encodeURIComponent("name contains 'grids' and trashed=false")+"&orderBy=modifiedTime%20desc&pageSize=200&fields=nextPageToken,files(id,name,modifiedTime)&spaces=drive"+(pt?"&pageToken="+encodeURIComponent(pt):""));const j=await r.json();out=out.concat(j.files||[]);pt=j.nextPageToken||""}while(pt);return out.filter(f=>String(f.name).startsWith(prefix))},
 async download(id){return(await request(D+"/"+id+"?alt=media")).text()},
 async upload(id,content,name){const b="plugbd"+Date.now(),meta={name,mimeType:"application/json"};const body="--"+b+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify(meta)+"\r\n--"+b+"\r\nContent-Type: application/json\r\n\r\n"+content+"\r\n--"+b+"--";
 const r=await request("https://www.googleapis.com/upload/drive/v3/files"+(id?"/"+id:"")+"?uploadType=multipart",{method:id?"PATCH":"POST",headers:{"Content-Type":"multipart/related; boundary="+b},body});return r.json()},
@@ -474,11 +475,14 @@ function pushSnap(label){try{const raw=localStorage.getItem(LS_KEY);if(!raw||!va
 function autoSnap(){const a=getSnaps();if(!a.length||Date.now()-a[0].t>600000)pushSnap("auto")}
 const MASTER_DATA_HEADERS = ["Field Name","Field Value","Active","Logic Based","Logic"];
 const MASTER_DATA_PAGE_SIZE = 12;
-function getDriveSettingsFileName(){
-  const title=(config?.links?.formTitle||"").trim();
-  const safeTitle=title.replace(/[\\/:*?"<>|\u0000-\u001F]/g,"_").replace(/\s+/g," ").trim();
+function currentAppName(){try{return (reg.apps[reg.activeId]?.name||"").trim()||"GRIDS"}catch(e){return "GRIDS"}}
+function driveFileNameFor(title){
+  const safeTitle=String(title||"").replace(/[\\/:*?"<>|\u0000-\u001F]/g,"_").replace(/\s+/g," ").trim();
   return safeTitle?`grids-settings_${safeTitle}.json`:"grids-settings_default.json";
 }
+/* The Drive settings file is named after the application. Older versions named it after the (now removed) Form title, so that name is still tried as a fallback. */
+function getDriveSettingsFileName(){return driveFileNameFor(currentAppName())}
+function legacyDriveFileName(){const t=(config?.links?.formTitle||"").trim();return t?driveFileNameFor(t):null}
 function escapeDriveQueryValue(value){return String(value).replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
 
 /* Replace this with the OAuth client ID configured for the GRIDS deployment. */
@@ -494,6 +498,8 @@ const EMPTY_CONFIG = {
     masterDataSheetUrl: "",
     masterDataSheetName: "",
     masterDataRange: "",
+    reportSheetName: "",
+    reportRange: "",
     formTitle: ""
   },
   fields: [],
@@ -558,6 +564,8 @@ function loadConfig(){
     c.links.masterDataSheetUrl ??= "";
     c.links.masterDataSheetName ??= "";
     c.links.masterDataRange ??= "";
+    c.links.reportSheetName ??= "";
+    c.links.reportRange ??= "";
     c.links.formTitle ??= "";
     c.fields=Array.isArray(c.fields)?c.fields:[];
     c.defaultValueRows=Array.isArray(c.defaultValueRows)?c.defaultValueRows:null;
@@ -834,7 +842,7 @@ function submissionUrl(){
 function renderHome(resetDraft=false){
   if(!resetDraft)captureHomeDraft();
   else clearHomeDraft();
-  document.getElementById("homeTitle").textContent=config.links.formTitle||"GRIDS";
+  document.getElementById("homeTitle").textContent=currentAppName();
   const form=document.getElementById("homeForm");
   const fields=sortFields();
   form.innerHTML=fields.length?fields.map(renderHomeField).join("")+
@@ -1024,18 +1032,31 @@ function sheetIdFromUrl(url){
   try{return new URL(url).pathname.match(/\/spreadsheets\/d\/([^/]+)/)?.[1]||null}catch(e){return null}
 }
 function gidFromUrl(url){
-  try{return new URL(url).searchParams.get("gid")||null}catch(e){return null}
+  try{const u=new URL(url);return u.searchParams.get("gid")||(u.hash.match(/gid=(\d+)/)||[])[1]||null}catch(e){return null}
 }
 async function fetchSheetData(){
   const sid=sheetIdFromUrl(config.links.sheetUrl); if(!sid)throw new Error("bad-sheet-link");
   const meta=await googleRequest(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}?fields=sheets.properties`);
-  const md=await meta.json(); const gid=gidFromUrl(config.links.sheetUrl);
-  let sh=(md.sheets||[]).find(x=>String(x.properties?.sheetId)===String(gid)); if(!sh)sh=(md.sheets||[])[0]; if(!sh)throw new Error("sheet-not-found");
-  const title=sh.properties.title; const range=encodeURIComponent(`'${title.replace(/'/g,"''")}'`);
-  const vr=await googleRequest(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}/values/${range}?majorDimension=ROWS`); const vd=await vr.json(); const values=vd.values||[];
-  if(!values.length)return {headers:[],rows:[]};
+  const md=await meta.json(),sheets=md.sheets||[];
+  const wantName=String(config.links.reportSheetName||"").trim(),rng=String(config.links.reportRange||"").trim();
+  let sh;
+  if(wantName){
+    // Strict: the configured tab must exist (exact name first, then ignoring case).
+    sh=sheets.find(x=>x.properties?.title===wantName)||sheets.find(x=>String(x.properties?.title||"").trim().toLowerCase()===wantName.toLowerCase());
+    if(!sh){const e=new Error("report-tab-not-found");e.tab=wantName;throw e}
+  }else{
+    // Fallback: the tab chosen by the link's #gid, otherwise the first tab.
+    const gid=gidFromUrl(config.links.sheetUrl);
+    sh=sheets.find(x=>String(x.properties?.sheetId)===String(gid))||sheets[0];
+    if(!sh)throw new Error("sheet-not-found");
+  }
+  const title=sh.properties.title,q="'"+title.replace(/'/g,"''")+"'";
+  const a1=rng?`${q}!${rng}`:q;
+  const vr=await googleRequest(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sid)}/values/${encodeURIComponent(a1)}?majorDimension=ROWS`); const vd=await vr.json(); const values=vd.values||[];
+  const source=rng?`${title}!${rng}`:title;
+  if(!values.length)return {headers:[],rows:[],source};
   const headers=values[0].map(x=>String(x??""));
-  return {headers,rows:values.slice(1).map((row,i)=>{const o={__row:i+2};headers.forEach((h,j)=>o[h]=row[j]??"");return o;})};
+  return {headers,source,rows:values.slice(1).map((row,i)=>{const o={__row:i+2};headers.forEach((h,j)=>o[h]=row[j]??"");return o;})};
 }
 const REPORT_AGGS=[["sum","Sum"],["average","Average"],["max","Max"],["min","Min"],["median","Median"],["count","Count"],["distinct count","Distinct count"],["first","First"],["last","Last"]];
 const NUMERIC_AGGS=new Set(["sum","average","max","min","median"]);
@@ -1379,7 +1400,7 @@ async function fetchReportData(buttonId="fetchReport"){
     reportFetchedAt=new Date();
     config.reportLayout.sheetHeaders=sheetColumnHeaders();saveConfig();
 
-    if(st)st.textContent=`${reportRows.length.toLocaleString()} rows · fetched ${reportFetchedAt.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}`;
+    if(st)st.textContent=`${reportRows.length.toLocaleString()} rows · ${result.source} · fetched ${reportFetchedAt.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}`;
     renderReportConfig();
     renderReportFilters();
     renderReportGrid();
@@ -1390,6 +1411,8 @@ async function fetchReportData(buttonId="fetchReport"){
     let msg="Couldn't read the linked Google Sheet.";
     if(e?.message==="bad-sheet-link")msg="The Google Sheet link is invalid. Check Settings → Links.";
     else if(e?.message==="sheet-not-found")msg="The requested Sheet tab could not be found.";
+    else if(e?.message==="report-tab-not-found")msg=`The sheet tab “${e.tab}” was not found in this Google Sheet. Check Report Data - Sheet Name in Settings → Links.`;
+    else if(status===400)msg="Google could not read the configured range. Check Report Data - Sheet Name and Data Range in Settings → Links.";
     else if(status===401)msg="Google access expired. Click Fetch again and reconnect Google.";
     else if(status===403)msg="Google access was denied. Make sure the signed-in account can view the Google Sheet.";
     else if(status===404)msg="The Google Sheet was not found. Check the Sheet link and sharing access.";
@@ -1535,7 +1558,7 @@ function renderReport(){
     auth.innerHTML=`<div class="card auth-card"><div class="auth-icon"><img src="${LOGO}" alt="GRIDS"></div><h3>Private report</h3><p>Report data comes from the linked Google Sheet. Sign in with the data owner account, or an account the owner has shared with.</p><button class="btn primary" id="reportSignIn">Connect Google</button></div>`;
     body.classList.add("hidden");document.getElementById("reportSignIn").onclick=async()=>{if(await privateAccess()){renderReport();fetchReportData("fetchReport")}};
   }
-  document.getElementById("reportTitle").textContent=config.links.formTitle||"GRIDS";
+  document.getElementById("reportTitle").textContent=currentAppName();
 }
 
 /* ===================== COPY / CSV EXPORT ===================== */
@@ -1581,7 +1604,7 @@ async function reportImageBlob(includeFilters){
   const fn=await loadHtml2Canvas();
   const box=document.createElement("div");
   box.style.cssText="position:fixed;left:-100000px;top:0;background:#fff;padding:18px;box-sizing:border-box;display:inline-block;width:max-content;max-width:none;min-width:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif;color:"+(document.documentElement.classList.contains("dark-theme")?"#fff":"#182335")+";overflow:visible";
-  const title=document.createElement("div");title.innerHTML=`<div style="font-size:18px;font-weight:800;margin-bottom:3px;color:#182335">${esc(config.links.formTitle||"GRIDS")}</div><div style="font-size:11px;color:#66758a;margin-bottom:12px">GRIDS Report</div>`;box.appendChild(title);
+  const title=document.createElement("div");title.innerHTML=`<div style="font-size:18px;font-weight:800;margin-bottom:3px;color:#182335">${esc(currentAppName())}</div><div style="font-size:11px;color:#66758a;margin-bottom:12px">GRIDS Report</div>`;box.appendChild(title);
   if(includeFilters){const fs=activeFilterLines();if(fs.length){const f=document.createElement("div");f.style.cssText="font-size:11px;margin-bottom:10px;color:#3f526b;white-space:nowrap";f.textContent=fs.join("  •  ");box.appendChild(f)}}
   const reportClone=src.cloneNode(true);
   reportClone.querySelectorAll(".hdr-filter").forEach(x=>x.remove());
@@ -1623,7 +1646,7 @@ async function copyReport(){
     let blob;
     if(activeFilters._copy){const saved=clone(activeFilters);activeFilters={};saved._copy.forEach(x=>{const [label,rest]=x.split(": ");const f=fieldByLabel(label);if(f)activeFilters[f.id]=rest.split(", ")});blob=await reportImageBlob(true);activeFilters=saved;delete activeFilters._copy}else blob=await reportImageBlob(includeFilters);
     if(dest==="clipboard"&&navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({"image/png":blob})]);toast("Image copied to clipboard")}
-    else if(dest==="share"&&navigator.share){const file=new File([blob],`grid-report-${Date.now()}.png`,{type:"image/png"});await navigator.share({title:config.links.formTitle||"GRIDS Report",files:[file]})}
+    else if(dest==="share"&&navigator.share){const file=new File([blob],`grid-report-${Date.now()}.png`,{type:"image/png"});await navigator.share({title:currentAppName()+" Report",files:[file]})}
     else{downloadBlob(blob,`grid-report-${new Date().toISOString().slice(0,10)}.png`,"image/png");toast("Image saved")}
   }catch(e){toast("Could not create the report image. Try again.");delete activeFilters._copy}
 }
@@ -1693,22 +1716,33 @@ function renderSettingsTab(){
   bindSettingsTab();
 }
 function renderLinksTab(){
+  const L=config.links;
   return `<div class="settings-section">
-    <details class="instructions settings-collapsible" id="linksSection" ${linksSectionOpen?'open':''}>
-      <summary><span>Links</span></summary>
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;min-width:0"><div class="theme-title">Application name</div><div class="theme-subtitle" style="font-size:13px;font-weight:800;color:var(--text)" id="linksAppName">${esc(currentAppName())}</div></div><button class="btn" id="renameAppBtn" type="button">Rename</button></div>
+    </div>
+    <details class="instructions settings-collapsible" id="linksHomeSection" ${linksHomeOpen?"open":""}>
+      <summary><span>Google Form Details for Home</span></summary>
       <div class="collapsible-body">
-        <div class="field"><label>Google Form link</label><input id="cfgFormUrl" value="${esc(config.links.formViewUrl)}" placeholder="https://docs.google.com/forms/d/e/.../viewform"><div class="field-hint">Use the public <b>viewform</b> URL.</div></div>
-        <div class="field"><label>Google Sheet link</label><input id="cfgSheetUrl" value="${esc(config.links.sheetUrl)}" placeholder="https://docs.google.com/spreadsheets/d/.../edit"></div>
-        <div class="field"><label>Master Data Google Sheet link</label><input id="cfgMasterDataSheetUrl" value="${esc(config.links.masterDataSheetUrl||"")}" placeholder="https://docs.google.com/spreadsheets/d/.../edit"><div class="field-hint">GRIDS reads and writes the configured sheet/range below. All users can read; saving requires Editor access.</div></div>
-        <div class="field"><label>Master Data sheet name</label><input id="cfgMasterDataSheetName" value="${esc(config.links.masterDataSheetName||"")}" placeholder="e.g. Master Data"><div class="field-hint">Enter the exact Google Sheets tab name. Spaces are allowed.</div></div>
-        <div class="field"><label>Master Data range</label><input id="cfgMasterDataRange" value="${esc(config.links.masterDataRange||"")}" placeholder="e.g. A1:E500"><div class="field-hint">Enter only the cell range. Suggested: <b>A1:E500</b> for the five Master Data columns.</div></div>
-        <div class="field"><label>Form title</label><input id="cfgFormTitle" value="${esc(config.links.formTitle)}" placeholder="Enter form title"></div>
-        <button class="btn primary" id="saveLinks" style="width:100%;margin-top:5px">Save links</button>
+        <div class="field"><label>Google Form link</label><input id="cfgFormUrl" value="${esc(L.formViewUrl)}" placeholder="https://docs.google.com/forms/d/e/.../viewform"><div class="field-hint">Use the public <b>viewform</b> URL.</div></div>
+        <div class="field"><label>Master Data - Google Sheet link</label><input id="cfgMasterDataSheetUrl" value="${esc(L.masterDataSheetUrl||"")}" placeholder="https://docs.google.com/spreadsheets/d/.../edit"><div class="field-hint">GRIDS reads and writes the configured sheet/range below. All users can read; saving requires Editor access.</div></div>
+        <div class="field"><label>Master Data - Sheet Name</label><input id="cfgMasterDataSheetName" value="${esc(L.masterDataSheetName||"")}" placeholder="e.g. Master Data"><div class="field-hint">Enter the exact Google Sheets tab name. Spaces are allowed.</div></div>
+        <div class="field"><label>Master Data - Data Range</label><input id="cfgMasterDataRange" value="${esc(L.masterDataRange||"")}" placeholder="e.g. A1:E500"><div class="field-hint">Enter only the cell range. Suggested: <b>A1:E500</b> for the five Master Data columns.</div></div>
       </div>
     </details>
+    <details class="instructions settings-collapsible" id="linksReportSection" ${linksReportOpen?"open":""}>
+      <summary><span>Google Sheet Details for Report</span></summary>
+      <div class="collapsible-body">
+        <div class="field"><label>Report Data - Google Sheet link</label><input id="cfgSheetUrl" value="${esc(L.sheetUrl)}" placeholder="https://docs.google.com/spreadsheets/d/.../edit"></div>
+        <div class="field"><label>Report Data - Sheet Name <span class="small">(optional)</span></label><input id="cfgReportSheetName" value="${esc(L.reportSheetName||"")}" placeholder="e.g. Responses"><div class="field-hint">Exact tab name to read. If left blank, GRIDS reads the tab selected by the link (<code>#gid=</code>), otherwise the first tab.</div></div>
+        <div class="field"><label>Report Data - Data Range <span class="small">(optional)</span></label><input id="cfgReportRange" value="${esc(L.reportRange||"")}" placeholder="e.g. A1:H2000"><div class="field-hint">Enter only the cell range; its first row must hold the column headers. If left blank, all data in the tab is read.</div></div>
+      </div>
+    </details>
+    <button class="btn primary" id="saveLinks" style="width:100%;margin-top:5px">Save links</button>
   </div>`;
 }
-let linksSectionOpen=false;
+let linksHomeOpen=true;
+let linksReportOpen=true;
 let formFieldsSectionOpen=false;
 let masterDataSectionOpen=false;
 let reportLayoutSectionOpen=false;
@@ -2112,7 +2146,12 @@ function saveBase(fileId,c){
     localStorage.setItem(SYNC_BASE_KEY,JSON.stringify({entries}));
   }catch(e){}
 }
-async function driveFiles(fileName=getDriveSettingsFileName()){return PlugGoogleSync.drive.find(fileName)}
+async function driveFiles(fileName=getDriveSettingsFileName()){
+  let files=await PlugGoogleSync.drive.find(fileName);
+  const legacy=legacyDriveFileName();
+  if(!files.length&&legacy&&legacy!==fileName&&fileName===getDriveSettingsFileName())files=await PlugGoogleSync.drive.find(legacy);
+  return files;
+}
 async function driveDownload(id){return PlugGoogleSync.drive.download(id)}
 async function driveUpload(id,content,fileName=getDriveSettingsFileName()){return PlugGoogleSync.drive.upload(id,content,fileName)}
 function mergeConfig(local,remote,base){
@@ -2147,7 +2186,7 @@ async function driveSyncNow(){
 
   const local=canonicalConfig();
   const base=fileId?loadBase(fileId):null;
-  const sameFileAsLastSync=syncConfig.driveFileId===fileId && syncConfig.driveFileName===driveFileName;
+  const sameFileAsLastSync=syncConfig.driveFileId===fileId && (syncConfig.driveFileName===driveFileName||syncConfig.driveFileName===legacyDriveFileName());
   const localChangedSinceSync=!!(syncConfig.localConfigChangedAt && syncConfig.lastSyncedAt && new Date(syncConfig.localConfigChangedAt).getTime()>new Date(syncConfig.lastSyncedAt).getTime());
   let finalConfig=local,upload=!remote;
 
@@ -2273,16 +2312,23 @@ function renderSyncTab(){
 /* ===================== SETTINGS BINDINGS ===================== */
 function bindSettingsTab(){
   if(settingsTab==="links"){
-    const linksDetails=document.getElementById("linksSection");
-    linksDetails?.addEventListener("toggle",()=>{linksSectionOpen=linksDetails.open});
+    const homeD=document.getElementById("linksHomeSection"),reportD=document.getElementById("linksReportSection");
+    homeD?.addEventListener("toggle",()=>{linksHomeOpen=homeD.open});
+    reportD?.addEventListener("toggle",()=>{linksReportOpen=reportD.open});
+    document.getElementById("renameAppBtn").onclick=renameActiveApp;
     document.getElementById("saveLinks").onclick=()=>{
+      const reportRangeVal=document.getElementById("cfgReportRange").value.trim().replace(/\s+/g,"");
+      if(reportRangeVal&&!/^(\$?[A-Za-z]{1,3}(\$?\d+)?(:\$?[A-Za-z]{1,3}(\$?\d+)?)?|\$?\d+:\$?\d+)$/.test(reportRangeVal)){
+        toast("Report Data - Data Range must be a cell range such as A1:H2000 (without the sheet name).");return;
+      }
+      config.links.reportSheetName=document.getElementById("cfgReportSheetName").value.trim();
+      config.links.reportRange=reportRangeVal;
       config.links.formViewUrl=document.getElementById("cfgFormUrl").value.trim();
       config.links.sheetUrl=document.getElementById("cfgSheetUrl").value.trim();
       config.links.masterDataSheetUrl=document.getElementById("cfgMasterDataSheetUrl")?.value.trim()||"";
       config.links.masterDataSheetName=document.getElementById("cfgMasterDataSheetName")?.value.trim()||"";
       config.links.masterDataRange=document.getElementById("cfgMasterDataRange")?.value.trim()||"";
-      config.links.formTitle=document.getElementById("cfgFormTitle").value.trim();{const a=reg.apps[reg.activeId];if(a&&!a.named&&config.links.formTitle){a.name=config.links.formTitle;regSave();updateChip()}}
-      saveConfig();renderHome(true);renderReport();document.getElementById("aboutFormTitle").textContent=config.links.formTitle;toast("Links saved")
+      saveConfig();renderHome(true);renderReport();toast("Links saved")
     };
   }
   if(settingsTab==="fields"){
@@ -2329,7 +2375,7 @@ function showView(key){
   if(key==="home")renderHome(false);
   if(key==="report")renderReport();
   if(key==="settings")renderSettings();
-  if(key==="about"){document.getElementById("aboutFormTitle").textContent=config.links.formTitle||"GRIDS"}
+  if(key==="about"){document.getElementById("aboutFormTitle").textContent=currentAppName()}
 }
 document.querySelectorAll(".tabbar button").forEach(b=>b.onclick=()=>showView(b.dataset.view));
 document.getElementById("fetchReport").onclick=()=>fetchReportData("fetchReport");
@@ -2390,7 +2436,7 @@ document.getElementById("aboutVersionCard").textContent=GRID_VERSION;
 renderHome();
 renderReport();
 renderSettings();
-document.getElementById("aboutFormTitle").textContent=config.links.formTitle||"GRIDS";document.getElementById("shareApp").onclick=async()=>{if(navigator.share){try{await navigator.share({title:config.links.formTitle||"GRIDS",text:"GRIDS — Google-linked Report & Input Dashboard Studio",url:location.href})}catch(e){}}else{try{await navigator.clipboard.writeText(location.href)}catch(e){}toast("App link copied")}};
+document.getElementById("aboutFormTitle").textContent=currentAppName();document.getElementById("shareApp").onclick=async()=>{if(navigator.share){try{await navigator.share({title:currentAppName(),text:"GRIDS — Google-linked Report & Input Dashboard Studio",url:location.href})}catch(e){}}else{try{await navigator.clipboard.writeText(location.href)}catch(e){}toast("App link copied")}};
 
 /* ===================== APPLICATIONS: registry, welcome, backups ===================== */
 const appName=id=>reg.apps[id]?.name||"Untitled";
@@ -2399,8 +2445,8 @@ function reloadActive(skipRecover){
   noRecover=!!skipRecover;try{config=loadConfig()}finally{noRecover=false}
   const m=loadMasterDataCache();masterDataRows=m.rows;masterDataFetchedAt=m.fetchedAt;
   syncConfig=loadSyncConfig();reportRows=[];reportHeaders=[];reportFetchedAt=null;activeFilters={};defaultDraftRows=null;masterDraftRows=null;clearHomeDraft();
-  renderHome(true);renderReport();renderSettings();updateChip();
-  document.getElementById("aboutFormTitle").textContent=config.links.formTitle||"GRIDS";
+  adoptLegacyTitle();renderHome(true);renderReport();renderSettings();updateChip();
+  document.getElementById("aboutFormTitle").textContent=currentAppName();
 }
 /* An application counts as set up when ANY part of it is configured (form link, sheet link, fields, master data or report layout) - not only the Google Form link. */
 function appIsConfigured(){
@@ -2434,6 +2480,21 @@ function toggleAppMenu(){
   };
   setTimeout(()=>document.addEventListener("click",appMenuOutside,true),0);
 }
+function refreshAppTitles(){
+  updateChip();
+  const n=currentAppName();
+  ["homeTitle","reportTitle","aboutFormTitle","linksAppName"].forEach(i=>{const e=document.getElementById(i);if(e)e.textContent=n});
+}
+async function renameActiveApp(){
+  const id=reg.activeId,n=await promptDialog("Rename application","New name",appName(id));
+  if(!n||!n.trim())return;
+  reg.apps[id].name=n.trim();reg.apps[id].named=true;regSave();refreshAppTitles();toast("Application renamed");
+}
+/* Older versions stored the application name as the "Form title" setting. Adopt it once for applications that were never renamed. */
+function adoptLegacyTitle(){
+  const a=reg.apps[reg.activeId],t=(config?.links?.formTitle||"").trim();
+  if(a&&!a.named&&t){a.name=t;a.named=true;regSave()}
+}
 function switchApp(id){bindKeys(id);reg.activeId=id;reg.apps[id].openedAt=Date.now();regSave();reloadActive()}
 function hideWelcome(){document.getElementById("welcome")?.classList.remove("show")}
 async function restoreLast(){
@@ -2459,13 +2520,80 @@ function importAll(){
     regSave();bindKeys(reg.activeId);reloadActive();toast("Applications restored");welcome();
   };i.click();
 }
+/* ---- Restore applications from Google Drive (one click on a new device) ---- */
+const DRIVE_PREFIX="grids-settings_";
+function isPristineApp(id){
+  const a=reg.apps[id];if(!a||a.named)return false;
+  const raw=localStorage.getItem(appKeys(id)+"config");if(!raw)return true;
+  try{const c=JSON.parse(raw);return !c.fields?.length&&!Object.values(c.links||{}).some(v=>String(v||"").trim())&&!c.defaultValueRows?.length&&!c.reportLayout?.rowsFields?.length&&!c.reportLayout?.values?.length}catch(e){return false}
+}
+async function restoreAppsFromDrive(){
+  if(!navigator.onLine){toast("Connect to the internet to reach Google Drive.");return}
+  if(!hasToken()){if(!(await privateAccess()))return}
+  let files;
+  try{files=await PlugGoogleSync.drive.list(DRIVE_PREFIX)}
+  catch(e){toast("Couldn't list your Google Drive files: "+(e.message||"unknown error"));return}
+  const seen=new Set();
+  files=files.filter(f=>/\.json$/i.test(f.name)&&!seen.has(f.name)&&seen.add(f.name)); // newest file per name
+  if(!files.length){toast("No GRIDS settings files were found in your Google Drive.");return}
+  const items=files.map(f=>{
+    const raw=f.name.slice(DRIVE_PREFIX.length).replace(/\.json$/i,"");
+    const isDefault=raw.toLowerCase()==="default";
+    const name=isDefault?"Restored application":raw;
+    return {f,name,isDefault,existing:!isDefault&&reg.order.some(k=>reg.apps[k]&&reg.apps[k].name===name)};
+  });
+  const rows=items.map((it,i)=>`<label class="check-item"><input type="checkbox" class="rdApp" value="${i}" ${it.existing?"":"checked"}> <span><b>${esc(it.name)}</b><br><span class="small">Saved ${esc(it.f.modifiedTime?new Date(it.f.modifiedTime).toLocaleString():"")}${it.existing?" · already on this device (will be replaced)":""}</span></span></label>`).join("");
+  let picked=null;
+  const root=modal("Restore applications from Google Drive",
+    `<p class="small" style="margin-top:0">Tick the applications to bring onto this device. Each one is created with its saved settings.</p><div style="display:flex;gap:8px;margin-bottom:8px"><button type="button" class="btn" id="rdAll">Select all</button><button type="button" class="btn" id="rdNone">Select none</button></div><div style="display:flex;flex-direction:column;gap:10px;max-height:46vh;overflow:auto">${rows}</div>`,
+    [{label:"Cancel",onClick:()=>{}},{label:"Restore selected",primary:true,onClick:()=>{if(picked&&picked.length)importDriveApps(picked.map(i=>items[i]));else toast("No applications were selected.")}}]);
+  root.querySelector("#rdAll").onclick=()=>root.querySelectorAll(".rdApp").forEach(c=>c.checked=true);
+  root.querySelector("#rdNone").onclick=()=>root.querySelectorAll(".rdApp").forEach(c=>c.checked=false);
+  // read the ticks before the dialog clears itself
+  root.addEventListener("click",e=>{if(e.target.closest('[data-mi="1"]'))picked=[...root.querySelectorAll(".rdApp")].filter(c=>c.checked).map(c=>+c.value)},true);
+}
+async function importDriveApps(items){
+  const pristine=reg.order.filter(isPristineApp);
+  let ok=0,lastId=null;const failed=[];
+  toast("Restoring "+items.length+" application"+(items.length===1?"":"s")+"…");
+  for(const it of items){
+    try{
+      const remote=JSON.parse(await PlugGoogleSync.drive.download(it.f.id));
+      if(!remote?.links||!Array.isArray(remote.fields)||!remote.reportLayout)throw new Error("not a GRIDS settings file");
+      const name=it.isDefault?((remote.links.formTitle||"").trim()||"Restored application"):it.name;
+      let id=reg.order.find(k=>reg.apps[k]&&reg.apps[k].name===name);
+      if(!id)id=regAdd(name);
+      reg.apps[id].named=true;regSave();
+      remote.grid_version=GRID_VERSION;
+      localStorage.setItem(appKeys(id)+"config",JSON.stringify(remote));
+      switchApp(id); // binds this application's storage and loads the restored settings
+      // Link it to its Drive file so the next Sync is a normal three-way sync.
+      const now=new Date().toISOString();
+      saveBase(it.f.id,canonicalConfig());
+      syncConfig.driveFileId=it.f.id;syncConfig.driveFileName=it.f.name;syncConfig.lastSyncedAt=now;syncConfig.localConfigChangedAt=now;syncConfig.wasConnected=true;saveSyncConfig();
+      lastId=id;ok++;
+    }catch(e){failed.push(it.name)}
+  }
+  if(ok){ // drop the empty placeholder application that a fresh device starts with
+    pristine.filter(id=>id!==lastId&&reg.apps[id]&&isPristineApp(id)).forEach(id=>{
+      Object.keys(localStorage).filter(k=>k.startsWith(appKeys(id))).forEach(k=>localStorage.removeItem(k));
+      delete reg.apps[id];reg.order=reg.order.filter(i=>i!==id);
+    });
+    if(!reg.apps[reg.activeId])reg.activeId=lastId;
+    regSave();
+  }
+  toast(failed.length?`Restored ${ok}; could not restore: ${failed.join(", ")}`:`Restored ${ok} application${ok===1?"":"s"} from Google Drive`);
+  if(lastId)welcome(lastId);
+}
 async function firstSetup(){
   const ch=[{label:"Import a settings file (.json)",value:"json",primary:true}];
   if(hasToken())ch.push({label:"Restore from Google Drive",value:"drive"});
+  ch.push({label:"Restore all applications from Google Drive",value:"driveall"});
   ch.push({label:"Start from scratch",value:"new"},{label:"Cancel",value:"x"});
   const c=await choiceDialog("Set up “"+appName(reg.activeId)+"”","This application has no settings yet. How would you like to set it up?",ch);
   if(c==="json"){hideWelcome();showView("home");importSettings()}
   else if(c==="drive"){await driveRestoreNow();hideWelcome();showView("home")}
+  else if(c==="driveall"){await restoreAppsFromDrive()}
   else if(c==="new"){hideWelcome();showView("settings")}
 }
 function welcome(sel){
@@ -2478,16 +2606,18 @@ function welcome(sel){
   <button class="btn primary" id="wlOpen" style="width:100%;margin-top:10px">Open</button>
   <div style="display:flex;gap:6px;margin-top:8px">${B("wlNew","+ New","ghost")}${B("wlDup","Duplicate","ghost")}${B("wlRen","Rename","ghost")}${B("wlDel","Delete","danger")}</div>
   ${legacy?`<button class="btn ghost" id="wlLegacy" style="width:100%;margin-top:8px">Import from GRID on this device</button>`:""}
+  <button class="btn" id="wlDrive" style="width:100%;margin-top:8px">☁ Restore applications from Google Drive</button>
   <div style="display:flex;gap:6px;margin-top:8px">${B("wlBackup","⇩ Backup all apps","ghost")}${B("wlRestore","⇧ Restore all apps","ghost")}</div>
   <label class="check-item" style="margin-top:12px"><input type="checkbox" id="wlAuto" ${reg.autoOpen?"checked":""}> Open the last application automatically next time</label></div>`;
   w.classList.add("show");
   const $=id=>document.getElementById(id),cur=()=>$("wlSel").value;
   $("wlOpen").onclick=async()=>{switchApp(cur());await openActiveApp()};
   $("wlAuto").onchange=e=>{reg.autoOpen=e.target.checked;regSave()};
+  $("wlDrive").onclick=restoreAppsFromDrive;
   $("wlBackup").onclick=exportAll;$("wlRestore").onclick=importAll;
   $("wlNew").onclick=async()=>{const n=await promptDialog("New application","Name of the new application","");if(n===null)return;const id=regAdd(n.trim()||"New application");reg.apps[id].named=!!n.trim();regSave();switchApp(id);hideWelcome();showView("settings")};
   $("wlDup").onclick=()=>{const src=cur(),id=regAdd(appName(src)+" copy");reg.apps[id].named=true;regSave();const raw=localStorage.getItem(appKeys(src)+"config");if(raw)localStorage.setItem(appKeys(id)+"config",raw);welcome(id)};
-  $("wlRen").onclick=async()=>{const id=cur(),n=await promptDialog("Rename application","New name",appName(id));if(!n||!n.trim())return;reg.apps[id].name=n.trim();reg.apps[id].named=true;regSave();updateChip();welcome(id)};
+  $("wlRen").onclick=async()=>{const id=cur(),n=await promptDialog("Rename application","New name",appName(id));if(!n||!n.trim())return;reg.apps[id].name=n.trim();reg.apps[id].named=true;regSave();refreshAppTitles();welcome(id)};
   $("wlDel").onclick=async()=>{const id=cur();if(ids.length<2){toast("Keep at least one application");return}
     if(!await confirmDialog("Delete application","Delete “"+appName(id)+"” and its settings from this device? Export it first if unsure. Google data is not affected.","Delete"))return;
     Object.keys(localStorage).filter(k=>k.startsWith(appKeys(id))).forEach(k=>localStorage.removeItem(k));delete reg.apps[id];reg.order=reg.order.filter(i=>i!==id);regSave();
@@ -2497,7 +2627,7 @@ function welcome(sel){
 document.getElementById("appChip").onclick=toggleAppMenu;
 document.getElementById("settingsAppsBtn")?.addEventListener("click",()=>welcome(reg.activeId));
 document.getElementById("themeBtn").onclick=()=>applyTheme(!isDarkTheme(),true);
-applyTheme(isDarkTheme(),false);updateChip();if(!reg.autoOpen)welcome();else if(appIsConfigured()&&landingView()==="report")showView("report");
+applyTheme(isDarkTheme(),false);adoptLegacyTitle();updateChip();if(!reg.autoOpen)welcome();else if(appIsConfigured()&&landingView()==="report")showView("report");
 setupServiceWorker();
 
 document.addEventListener("click",e=>{
