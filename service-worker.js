@@ -5,7 +5,7 @@
 // All apps share one GitHub Pages origin (and one Cache Storage),
 // so every cache this app owns starts with this prefix.
 const CACHE_PREFIX = "grids-cache-";
-const CACHE_NAME = CACHE_PREFIX + "v1.0.5";
+const CACHE_NAME = CACHE_PREFIX + "v1.1.0";
 
 const ASSETS = [
   "./",
