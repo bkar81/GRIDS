@@ -75,7 +75,7 @@ main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:76px;-
 .filter-chip{flex:0 0 auto;border:1px solid var(--border);background:var(--surface);border-radius:20px;padding:7px 10px;font-size:11px;font-weight:800;color:var(--text-dim)}.filter-chip.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .report-wrap{overflow:auto;max-height:calc(100dvh - 260px);border:1px solid var(--border);border-radius:10px;background:var(--report-bg);-webkit-overflow-scrolling:touch}.report-grid{border-collapse:collapse;width:100%;min-width:340px;font-size:12px}.report-grid th,.report-grid td{border-bottom:1px solid var(--border-soft);border-right:1px solid var(--border-soft);padding:7px 8px;text-align:right;white-space:nowrap}.report-grid thead th{position:sticky;top:0;z-index:3}.report-grid th:last-child,.report-grid td:last-child{border-right:0}.report-grid th:first-child,.report-grid td:first-child{text-align:left}.report-grid thead th{background:var(--report-head);color:#fff;font-size:11px;font-weight:800}.report-grid tbody tr:nth-child(even){background:var(--report-even)}.report-grid .total-row td{background:var(--report-total);color:var(--report-total-text);font-weight:900;border-top:1px solid #bfd3f3}.report-empty{padding:34px 15px;text-align:center;color:var(--text-faint);font-size:13px}
 .rc-list{display:flex;flex-direction:column;gap:6px}.rc-val{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.rc-val .check-item{flex:1;min-width:0}.rc-val .rc-agg{flex:0 0 auto;min-width:0;width:auto}.rc-note{flex:0 0 100%;margin:0 0 2px}.rc-sub{margin:0 0 8px}
-.hdr-filter{border:0;background:transparent;color:inherit;font-size:10px;padding:0 0 0 5px;cursor:pointer;opacity:.75}.hdr-filter.on{opacity:1;color:#ffd166}.report-caption{display:flex;align-items:center;gap:6px;padding:7px 9px;font-size:11px;font-weight:800;color:var(--text-dim);border-bottom:1px solid var(--border-soft)}.report-caption .hdr-filter.on{color:var(--accent)}.report-grid thead th.hdr-group{text-align:center}.report-grid thead tr.hdr2 th{top:29px}
+.hdr-filter{border:0;background:transparent;color:inherit;font-size:10px;padding:0 0 0 5px;cursor:pointer;opacity:.75}.hdr-filter.on{opacity:1;color:#ffd166}.report-caption{display:flex;align-items:center;gap:6px;padding:7px 9px;font-size:11px;font-weight:800;color:var(--text-dim);border-bottom:1px solid var(--border-soft)}.report-caption .hdr-filter.on{color:var(--accent)}.report-grid thead th.hdr-col{text-align:center}.report-grid thead th.hdr-row{text-align:left}.report-grid tbody td.sub-col{font-weight:800}.report-grid td.grand-col,.report-grid thead th.grand-col{border-left:2px solid var(--border);font-weight:900}.report-grid tbody tr.sub-row td{background:var(--report-total);color:var(--report-total-text);font-weight:800}.rc-by{margin-left:auto;font-weight:700}.rc-order{margin-top:8px;display:flex;flex-direction:column;gap:5px}.rc-ord{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim)}.rc-ord span{flex:1;min-width:0}.rc-mv{padding:2px 10px;min-width:0;font-size:12px}
 .auth-card{text-align:center;padding:26px 16px}.auth-icon{width:44px;height:44px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-weight:900}.auth-icon img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block}.auth-card h3{margin:0 0 6px;font-size:16px}.auth-card p{margin:0 0 15px;color:var(--text-dim);font-size:12px;line-height:1.5}
 .seg{display:flex;gap:3px;background:var(--surface-2);border:1px solid var(--border);padding:3px;border-radius:10px;margin-bottom:13px;overflow:auto}.seg button{flex:1;min-width:74px;border:0;border-radius:7px;background:none;padding:8px 7px;color:var(--text-faint);font-size:11px;font-weight:800}.seg button.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 4px rgba(31,55,87,.1)}
 .settings-section{margin-bottom:18px}.section-title{font-size:11px;font-weight:900;color:var(--heading-accent);letter-spacing:.6px;text-transform:uppercase;margin:0 0 8px}.settings-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.compact-action{width:auto!important;min-height:34px;padding:7px 11px;white-space:nowrap}
@@ -311,7 +311,8 @@ html,body,main{overscroll-behavior-y:contain}
 /* app bridge */
 .topbar{display:flex;align-items:center;gap:8px}.topbar .brand{flex:1 1 auto;min-width:0}.theme-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);font-size:18px;line-height:1;padding:0;flex:0 0 auto;cursor:pointer}#homeTitle,#reportTitle{display:none}html:not(.dark-theme) .btn.ghost{color:var(--accent);background:var(--surface-2);border-color:var(--border-strong)}.about-section a{color:var(--accent);font-weight:700}
 html[data-style]{--text-dim:var(--text-muted);--accent-ink:var(--on-accent);--border-soft:var(--border);--surface-3:var(--accent-soft);--topbar-bg:var(--surface);--tabbar-bg:var(--surface);--report-bg:var(--surface);--report-even:var(--surface-2);--report-total:var(--accent-soft);--report-total-text:var(--heading-accent);--modal-bg:var(--surface);--hover-soft:var(--accent-soft)}
-#modalRoot .modal-backdrop{z-index:300}#welcome{position:fixed;inset:0;z-index:40;background:var(--bg);display:none;overflow:auto;padding:24px 16px}#welcome.show{display:block}.wl-card{max-width:420px;margin:5vh auto}.wl-logo{width:84px;height:84px;display:block;margin:0 auto 10px}#appChip{font-size:11px;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto}
+#modalRoot .modal-backdrop{z-index:300}#welcome{position:fixed;inset:0;z-index:40;background:var(--bg);display:none;overflow:auto;padding:24px 16px}#welcome.show{display:block}.wl-card{max-width:420px;margin:5vh auto}.wl-logo{width:84px;height:84px;display:block;margin:0 auto 10px}.app-menu{position:fixed;z-index:60;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);min-width:210px;max-width:calc(100vw - 16px);max-height:60vh;overflow:auto;padding:6px}.app-menu button{display:block;width:100%;text-align:left;padding:9px 10px;border:0;background:transparent;color:var(--text);border-radius:8px;font:inherit;font-size:13px;cursor:pointer;white-space:normal;word-break:break-word}.app-menu button:hover{background:var(--accent-soft)}.app-menu button.cur{font-weight:800;color:var(--accent)}.app-menu hr{border:0;border-top:1px solid var(--border-soft);margin:5px 0}
+#appChip{font-size:11px;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto}
 </style>
 </head>
 <body>
@@ -321,7 +322,7 @@ html[data-style]{--text-dim:var(--text-muted);--accent-ink:var(--on-accent);--bo
       <div class="brand-mark"><img data-logo="" alt="GRIDS"></div>
       <div class="brand-copy"><div class="brand-title">GRIDS</div><!-- <div class="brand-sub">Google-linked Report &amp; Input Dashboard Studio</div> --></div>
     </div>
-    <button class="btn" id="appChip" type="button" title="Switch application"></button>
+    <button class="btn" id="appChip" type="button" title="Switch application" aria-haspopup="menu"></button>
     <button class="theme-btn" id="themeBtn" type="button" aria-label="Switch theme"></button>
   </header>
 
@@ -366,6 +367,10 @@ html[data-style]{--text-dim:var(--text-muted);--accent-ink:var(--on-accent);--bo
       <div class="card theme-card">
         <div><div class="theme-title">Theme</div><div class="theme-subtitle">Choose how GRIDS looks across all pages.</div></div>
         <label class="theme-switch" title="Toggle dark theme"><input type="checkbox" id="darkThemeToggle"><span class="theme-switch-track"><span class="theme-switch-knob"></span></span><span class="theme-switch-label">Light</span></label>
+      </div>
+      <div class="card theme-card">
+        <div><div class="theme-title">Applications</div><div class="theme-subtitle">Switch, create, rename or back up applications.</div></div>
+        <button class="btn" id="settingsAppsBtn" type="button">Manage applications</button>
       </div>
       <div id="settingsAuth"></div>
       <div id="settingsPrivate" class="hidden">
@@ -513,7 +518,7 @@ const EMPTY_CONFIG = {
 
 const clone = x => JSON.parse(JSON.stringify(x));
 /* Report layout lives entirely in config.reportLayout so it is cached, synced to Drive and exported/imported with the rest of the settings.
-   rowsFields[]/columnsField/filterFields[] hold sheet-column ids ("col:<header>"); values[] holds {id,agg}; filterValues holds the chosen filter values. */
+   rowsFields[]/columnsFields[]/filterFields[] hold sheet-column ids ("col:<header>"); values[] holds {id,agg}; filterValues holds the chosen filter values. */
 function normalizeReportLayout(c){
   const rl=c.reportLayout||(c.reportLayout={});
   const fields=Array.isArray(c.fields)?c.fields:[];
@@ -522,18 +527,19 @@ function normalizeReportLayout(c){
   const uniq=a=>[...new Set(a.filter(Boolean))];
   rl.rowsFields=uniq((Array.isArray(rl.rowsFields)&&rl.rowsFields.length?rl.rowsFields:(rl.rowsField?[rl.rowsField]:[])).map(mig));
   rl.rowsField=rl.rowsFields[0]||null;
-  rl.columnsField=mig(rl.columnsField);
+  rl.columnsFields=uniq((Array.isArray(rl.columnsFields)?rl.columnsFields:(rl.columnsField?[rl.columnsField]:[])).map(mig));
+  rl.columnsField=rl.columnsFields[0]||null;
   rl.filterFields=uniq((Array.isArray(rl.filterFields)&&rl.filterFields.length?rl.filterFields:(rl.filterField?[rl.filterField]:[])).map(mig));
   rl.filterField=rl.filterFields[0]||null;
   rl.periodField=mig(rl.periodField);
   rl.periodFormat??="";rl.showSerialNumber??=true;
+  rl.showGrandRow??=true;rl.showGrandCol??=true;rl.showColSubtotals??=true;rl.showRowSubtotals??=true;rl.repeatRowLabels??=false;
   if(!Array.isArray(rl.values)){
     const vf=mig(rl.valueField),ma=rl.measureAggregations||{};
     rl.values=vf?[{id:vf,agg:ma[rl.valueField]||ma[vf]||rl.aggregation||"sum"}]:[];
   }
   const seen=new Set();
   rl.values=rl.values.filter(v=>v&&v.id).map(v=>({id:mig(v.id),agg:AGGS.includes(v.agg)?v.agg:"sum"})).filter(v=>!seen.has(v.id)&&seen.add(v.id));
-  if(rl.columnsField&&rl.values.length>1)rl.values=rl.values.slice(0,1);
   rl.sheetHeaders=Array.isArray(rl.sheetHeaders)?rl.sheetHeaders:[];
   if(!rl.filterValues||typeof rl.filterValues!=="object"||Array.isArray(rl.filterValues))rl.filterValues={};
   return rl;
@@ -1145,19 +1151,6 @@ function sortDateAwareValues(values,f){
   return [...values].sort((a,b)=>dateAwareCompare(a,b,f));
 }
 function compareReportValues(a,b,f){return dateAwareCompare(a,b,f)}
-function sortReportRowGroups(groups,rows,rowFs){
-  const indexed=groups.map((group,index)=>({group,index,firstIndex:group.firstIndex}));
-  if(reportSortBy==="serial")indexed.sort((a,b)=>a.firstIndex-b.firstIndex);
-  else indexed.sort((a,b)=>{
-    for(let i=0;i<rowFs.length;i++){
-      const c=compareReportValues(a.group.values[i],b.group.values[i],rowFs[i]);
-      if(c!==0)return c;
-    }
-    return a.firstIndex-b.firstIndex;
-  });
-  if(reportSortDir==="desc")indexed.reverse();
-  return indexed.map(x=>x.group);
-}
 
 function toggleReportColumnSort(type){
   const key=type==="serial"?"serial":"row";
@@ -1177,69 +1170,138 @@ function reportSortHeader(type,label,extra="",fbtn=""){
 function buildReportModel(){
   const rl=normalizeReportLayout(config);
   const rowFs=rl.rowsFields.map(modelField).filter(Boolean);
-  const colF=modelField(rl.columnsField)||null;
-  let vals=rl.values.map(v=>({f:modelField(v.id),agg:v.agg})).filter(v=>v.f);
-  if(colF)vals=vals.slice(0,1);
+  const colFs=rl.columnsFields.map(modelField).filter(Boolean);
+  const vals=rl.values.map(v=>({f:modelField(v.id),agg:v.agg})).filter(v=>v.f);
   if(!rowFs.length||!vals.length)return null;
   const rows=applyFilters(reportRows);
-  const groupMap=new Map();
-  rows.forEach((r,index)=>{
-    const values=rowFs.map(f=>sheetValue(r,f));
-    const key=JSON.stringify(values);
-    let g=groupMap.get(key);
-    if(!g){g={values,firstIndex:index,rows:[],byCol:new Map()};groupMap.set(key,g)}
-    g.rows.push(r);
-    if(colF){const cv=sheetValue(r,colF);let a=g.byCol.get(cv);if(!a){a=[];g.byCol.set(cv,a)}a.push(r)}
+  const L=colFs.length,fmt=rl.periodFormat||"",pid=rl.periodField;
+  const valuesLevel=L>0&&vals.length>1;
+  // per-record column keys (one cumulative key per nesting level)
+  const ckOf=new Map();
+  if(L)rows.forEach(r=>{const parts=colFs.map(f=>sheetValue(r,f)),keys=[];let k="";parts.forEach((p,i)=>{k+=(i?"\u0001":"")+p;keys.push(k)});ckOf.set(r,{parts,keys})});
+  // ----- column tree -> column specs -----
+  const colRoot={children:new Map()};
+  if(L)rows.forEach(r=>{
+    const {parts,keys}=ckOf.get(r);let n=colRoot;
+    parts.forEach((p,i)=>{let c=n.children.get(p);if(!c){c={value:p,key:keys[i],children:new Map()};n.children.set(p,c)}n=c});
   });
-  const rowGroups=sortReportRowGroups([...groupMap.values()],rows,rowFs);
-  const fmt=rl.periodFormat||"";
-  let headers,matrix,totals;
-  if(!colF){
-    // No Columns field: every Values field becomes its own column, named after the field.
-    headers=vals.map(v=>({label:v.f.label,agg:v.agg,f:v.f}));
-    matrix=rowGroups.map(g=>vals.map(v=>aggregateRows(g.rows,v.f,v.agg)));
-    totals=vals.map(v=>aggregateRows(rows,v.f,v.agg));
+  const orderCols=(map,f)=>{
+    const sorted=sortDateAwareValues([...map.keys()].filter(v=>v!==""),f);
+    if(map.has(""))sorted.push("");
+    return sorted.map(k=>map.get(k));
+  };
+  const specs=[];
+  const pushSpec=(kind,level,key,path)=>{
+    if(valuesLevel)vals.forEach((v,i)=>specs.push({kind,level,key,v,path:[...path,{label:v.f.label,id:path.map(x=>x?x.id:"-").join("|")+"|v"+i}]}));
+    else specs.push({kind,level,key,v:vals[0],path});
+  };
+  if(!L){
+    vals.forEach((v,i)=>specs.push({kind:"value",level:-1,key:"",v,path:[{label:v.f.label,id:"v"+i}]}));
   }else{
-    const colRows=new Map();
-    rows.forEach(r=>{const cv=sheetValue(r,colF);let a=colRows.get(cv);if(!a){a=[];colRows.set(cv,a)}a.push(r)});
-    let cvs=[...colRows.keys()].filter(v=>v!=="");
-    cvs=sortDateAwareValues(cvs,colF);
-    if(colRows.has(""))cvs.push("");
-    const v=vals[0];
-    headers=cvs.map(cv=>({label:cv===""?"(Blank)":(colF.id===rl.periodField?formatDateLike(cv,fmt):cv),agg:v.agg,f:v.f}));
-    matrix=rowGroups.map(g=>cvs.map(cv=>aggregateRows(g.byCol.get(cv)||[],v.f,v.agg)));
-    totals=cvs.map(cv=>aggregateRows(colRows.get(cv)||[],v.f,v.agg));
+    const walk=(parent,level,pathSoFar)=>{
+      orderCols(parent.children,colFs[level]).forEach(c=>{
+        const label=c.value===""?"(Blank)":(colFs[level].id===pid?formatDateLike(c.value,fmt):c.value);
+        const path=[...pathSoFar,{label,id:c.key}];
+        if(level===L-1)pushSpec("data",level,c.key,path);
+        else{
+          walk(c,level+1,path);
+          if(rl.showColSubtotals)pushSpec("sub",level,c.key,[...pathSoFar,{label:label+" Total",id:"sub:"+c.key},...Array(L-1-level).fill(null)]);
+        }
+      });
+    };
+    walk(colRoot,0,[]);
+    if(rl.showGrandCol)pushSpec("grand",-1,"",[{label:"Grand Total",id:"grand"},...Array(L-1).fill(null)]);
   }
-  return {rowFs,colF,vals,rowGroups,headers,matrix,totals,rows,periodId:rl.periodField};
+  if(specs.length>400)return {tooMany:specs.length};
+  const cellsFor=rs=>{
+    if(!L)return specs.map(sp=>aggregateRows(rs,sp.v.f,sp.v.agg));
+    const maps=colFs.map(()=>new Map());
+    rs.forEach(r=>{ckOf.get(r).keys.forEach((k,i)=>{let a=maps[i].get(k);if(!a){a=[];maps[i].set(k,a)}a.push(r)})});
+    return specs.map(sp=>aggregateRows(sp.kind==="grand"?rs:(maps[sp.kind==="data"?L-1:sp.level].get(sp.key)||[]),sp.v.f,sp.v.agg));
+  };
+  // ----- row tree -> lines (data + subtotal) -----
+  const rowRoot={children:new Map(),path:[]};
+  rows.forEach((r,index)=>{
+    let n=rowRoot;
+    rowFs.forEach((f,i)=>{
+      const v=sheetValue(r,f);let c=n.children.get(v);
+      if(!c){c={value:v,children:new Map(),rows:[],firstIndex:index,path:[...n.path,v]};n.children.set(v,c)}
+      c.rows.push(r);n=c;
+    });
+  });
+  const orderRows=(map,f)=>{
+    const a=[...map.values()];
+    a.sort((x,y)=>{
+      if(reportSortBy==="serial")return x.firstIndex-y.firstIndex;
+      const xb=x.value==="",yb=y.value==="";if(xb!==yb)return xb?1:-1;
+      return compareReportValues(x.value,y.value,f)||x.firstIndex-y.firstIndex;
+    });
+    if(reportSortDir==="desc")a.reverse();
+    return a;
+  };
+  const lines=[];
+  const emit=(parent,level)=>{
+    orderRows(parent.children,rowFs[level]).forEach(c=>{
+      if(level===rowFs.length-1)lines.push({kind:"data",level,labels:c.path,cells:cellsFor(c.rows)});
+      else{
+        emit(c,level+1);
+        if(rl.showRowSubtotals)lines.push({kind:"sub",level,labels:c.path,cells:cellsFor(c.rows)});
+      }
+    });
+  };
+  emit(rowRoot,0);
+  return {rowFs,colFs,vals,specs,lines,totals:cellsFor(rows),rows,periodId:pid,valuesLevel,depth:Math.max(1,L+(valuesLevel?1:0))};
 }
 function reportDisplayRows(m){
-  return m.rowGroups.map((group,index)=>({group,index})).filter(x=>{
-    if(!reportHideAllBlankRows)return true;
-    return m.matrix[x.index].some(v=>v!==null&&v!==undefined&&v!=="");
-  });
+  return m.lines.filter(l=>!reportHideAllBlankRows||l.cells.some(v=>v!==null&&v!==undefined&&v!==""));
 }
 function renderReportGrid(){
   const wrap=document.getElementById("reportGridWrap"),m=buildReportModel();
   if(!reportHeaders.length){wrap.innerHTML=`<div class="card report-empty">Click <b>Fetch</b> to read the linked Google Sheet. GRIDS does not read the Sheet merely because a Sheet link is configured.</div>`;return}
   if(!m){wrap.innerHTML=`<div class="card report-empty">In <b>Report Config</b>, tick at least one field under Rows and one under Values.</div>`;return}
-  if(!m.rows.length||!m.headers.length){wrap.innerHTML=`<div class="card report-empty">No records match the current filters.</div>`;return}
-  const rl=config.reportLayout,sn=rl.showSerialNumber,fmt=rl.periodFormat||"";
-  const displayRows=reportDisplayRows(m);
+  if(m.tooMany){wrap.innerHTML=`<div class="card report-empty">These Columns fields would create ${m.tooMany} columns. Choose fewer or less detailed Columns fields, or filter the data.</div>`;return}
+  if(!m.rows.length||!m.specs.length){wrap.innerHTML=`<div class="card report-empty">No records match the current filters.</div>`;return}
+  const rl=config.reportLayout,sn=rl.showSerialNumber,fmt=rl.periodFormat||"",D=m.depth,L=m.colFs.length;
   const displayDate=v=>formatDateLike(v,fmt);
   const fbtn=f=>`<button type="button" class="hdr-filter ${activeFilters[f.id]?.length?"on":""}" data-hf="${esc(f.id)}" title="Filter ${esc(f.label)}">▾</button>`;
-  const rs=m.colF?' rowspan="2"':"";
-  const rowHeaders=m.rowFs.map((f,i)=>i===0?reportSortHeader("row",f.label,rs,fbtn(f)):`<th${rs}>${esc(f.label)}${fbtn(f)}</th>`).join("");
+  const rsp=D>1?` rowspan="${D}"`:"";
+  const nR=m.rowFs.length;
   let h=`<div class="report-wrap" id="reportCapture">`;
-  if(m.colF){const v=m.vals[0];h+=`<div class="report-caption"><span>${esc(v.f.label)} · ${esc(AGG_LABEL[v.agg])}</span>${fbtn(v.f)}</div>`}
-  h+=`<table class="report-grid"><thead><tr>${sn?reportSortHeader("serial","#",rs):""}${rowHeaders}`;
-  if(m.colF)h+=`<th class="hdr-group" colspan="${m.headers.length}">${esc(m.colF.label)}${fbtn(m.colF)}</th></tr><tr class="hdr2">${m.headers.map(c=>`<th>${esc(c.label)}</th>`).join("")}</tr>`;
-  else h+=m.headers.map(c=>`<th title="${esc(AGG_LABEL[c.agg])}">${esc(c.label)}${fbtn(c.f)}</th>`).join("")+`</tr>`;
-  h+=`</thead><tbody>`;
-  displayRows.forEach((item,i)=>{
-    const values=item.group.values,row=m.matrix[item.index];
-    h+=`<tr>${sn?`<td>${i+1}</td>`:""}${values.map((v,j)=>`<td><b>${esc(v===""?"(Blank)":(m.rowFs[j].id===m.periodId?displayDate(v):v))}</b></td>`).join("")}${row.map((v,k)=>`<td>${esc(formatCell(v,m.headers[k].agg))}</td>`).join("")}</tr>`;
+  if(L)h+=`<div class="report-caption"><span>${m.vals.map(v=>`${esc(v.f.label)} · ${esc(AGG_LABEL[v.agg])}${fbtn(v.f)}`).join(" &nbsp;|&nbsp; ")}</span><span class="rc-by">by ${m.colFs.map(f=>esc(f.label)+fbtn(f)).join(" › ")}</span></div>`;
+  // ----- header rows (nested, merged) -----
+  const hr=Array.from({length:D},()=>"");
+  hr[0]+=(sn?reportSortHeader("serial","#",rsp+''):"")+m.rowFs.map((f,i)=>i===0?reportSortHeader("row",f.label,rsp,fbtn(f)):`<th class="hdr-row"${rsp}>${esc(f.label)}${fbtn(f)}</th>`).join("");
+  for(let l=0;l<D;l++){
+    let i=0;
+    while(i<m.specs.length){
+      const c=m.specs[i].path[l];
+      if(!c){i++;continue}
+      let j=i+1;while(j<m.specs.length&&m.specs[j].path[l]&&m.specs[j].path[l].id===c.id)j++;
+      let rs2=1;for(let q=l+1;q<D&&m.specs[i].path[q]===null;q++)rs2++;
+      const sp=m.specs[i],cls=["hdr-col",sp.kind==="sub"?"sub-col":"",sp.kind==="grand"?"grand-col":""].join(" ");
+      const btn=(!L&&l===0)?fbtn(sp.v.f):"";
+      hr[l]+=`<th class="${cls}" style="top:${l*29}px"${j-i>1?` colspan="${j-i}"`:""}${rs2>1?` rowspan="${rs2}"`:""} title="${esc(AGG_LABEL[sp.v.agg])}">${esc(c.label)}${btn}</th>`;
+      i=j;
+    }
+  }
+  h+=`<table class="report-grid"><thead>${hr.map(x=>`<tr>${x}</tr>`).join("")}</thead><tbody>`;
+  // ----- body -----
+  const cell=(v,sp)=>`<td class="${sp.kind==="sub"?"sub-col":sp.kind==="grand"?"grand-col":""}">${esc(formatCell(v,sp.v.agg))}</td>`;
+  const lab=(v,j)=>v===""?"(Blank)":(m.rowFs[j].id===m.periodId?displayDate(v):v);
+  let serial=0,prev=[];
+  reportDisplayRows(m).forEach(line=>{
+    const k=line.kind==="sub"?line.level:nR-1;
+    const same=j=>j<prev.length&&prev.slice(0,j+1).every((x,t)=>x===line.labels[t]);
+    let tds="";
+    for(let j=0;j<k;j++)tds+=(rl.repeatRowLabels||!same(j))?`<td><b>${esc(lab(line.labels[j],j))}</b></td>`:`<td></td>`;
+    if(line.kind==="sub")tds+=`<td colspan="${nR-k}"><b>${esc(lab(line.labels[k],k))} Total</b></td>`;
+    else tds+=(rl.repeatRowLabels||!same(k))?`<td><b>${esc(lab(line.labels[k],k))}</b></td>`:`<td></td>`;
+    prev=line.labels;
+    if(line.kind==="data")serial++;
+    h+=`<tr class="${line.kind==="sub"?"sub-row":""}">${sn?`<td>${line.kind==="data"?serial:""}</td>`:""}${tds}${line.cells.map((v,i)=>cell(v,m.specs[i])).join("")}</tr>`;
   });
-  h+=`<tr class="total-row">${sn?"<td></td>":""}<td colspan="${m.rowFs.length}">Grand total</td>${m.totals.map((v,k)=>`<td>${esc(formatCell(v,m.headers[k].agg))}</td>`).join("")}</tr></tbody></table></div>`;
+  if(rl.showGrandRow)h+=`<tr class="total-row">${sn?"<td></td>":""}<td colspan="${nR}">Grand total</td>${m.totals.map((v,i)=>cell(v,m.specs[i])).join("")}</tr>`;
+  h+=`</tbody></table></div>`;
   wrap.innerHTML=h;
   wrap.querySelectorAll(".hdr-filter").forEach(b=>b.onclick=e=>{e.stopPropagation();e.preventDefault();openFilterPicker(b.dataset.hf)});
 }
@@ -1358,12 +1420,12 @@ function persistFilters(){
 }
 function pruneFilters(){
   const rl=config.reportLayout;
-  const used=new Set([...rl.rowsFields,rl.columnsField,...rl.values.map(v=>v.id),...rl.filterFields].filter(Boolean));
+  const used=new Set([...rl.rowsFields,...rl.columnsFields,...rl.values.map(v=>v.id),...rl.filterFields].filter(Boolean));
   Object.keys(activeFilters).forEach(k=>{if(k!=="_copy"&&!used.has(k))delete activeFilters[k]});
 }
 function reportFieldChoices(){
   const out=sheetFields(),have=new Set(out.map(f=>f.id)),rl=config.reportLayout;
-  [...rl.rowsFields,rl.columnsField,...rl.values.map(v=>v.id),...rl.filterFields,rl.periodField].forEach(id=>{
+  [...rl.rowsFields,...rl.columnsFields,...rl.values.map(v=>v.id),...rl.filterFields,rl.periodField].forEach(id=>{
     if(id&&!have.has(id)){const f=virtualField(id);if(f){have.add(id);out.push({...f,label:f.label+" (not in sheet)"})}}
   });
   return out;
@@ -1375,10 +1437,12 @@ function defaultAggFor(id){
 function renderReportConfig(){
   const host=document.getElementById("reportConfigHost");if(!host)return;
   const rl=normalizeReportLayout(config),fields=reportFieldChoices();
-  const inRows=new Set(rl.rowsFields),inFilters=new Set(rl.filterFields),valMap=new Map(rl.values.map(v=>[v.id,v])),colMode=!!rl.columnsField;
+  const inRows=new Set(rl.rowsFields),inCols=new Set(rl.columnsFields),inFilters=new Set(rl.filterFields),valMap=new Map(rl.values.map(v=>[v.id,v]));
+  const labelOf=id=>fields.find(f=>f.id===id)?.label||id;
   const empty=`<span class="small">Fetch the Sheet data to load its column headers.</span>`;
   const check=(area,f,on)=>`<label class="check-item"><input type="checkbox" data-rc-area="${area}" value="${esc(f.id)}" ${on?"checked":""}> ${esc(f.label)}</label>`;
   const grid=(area,isOn)=>fields.length?`<div class="check-grid">${fields.map(f=>check(area,f,isOn(f))).join("")}</div>`:empty;
+  const orderList=(area,ids)=>ids.length>1?`<div class="rc-order"><div class="field-hint">Order (first = outermost / leftmost)</div>${ids.map((id,i)=>`<div class="rc-ord"><span>${i+1}. ${esc(labelOf(id))}</span><button type="button" class="btn rc-mv" data-rc-move="${area}" data-id="${esc(id)}" data-dir="-1" ${i===0?"disabled":""} aria-label="Move up">↑</button><button type="button" class="btn rc-mv" data-rc-move="${area}" data-id="${esc(id)}" data-dir="1" ${i===ids.length-1?"disabled":""} aria-label="Move down">↓</button></div>`).join("")}</div>`:"";
   const panel=(key,title,count,hint,body)=>`<details class="instructions settings-collapsible" data-rc="${key}" ${rcOpen[key]?"open":""}><summary><span>${title}${count?` <span class="small">(${count})</span>`:""}</span></summary><div class="collapsible-body"><div class="field-hint rc-sub">${hint}</div>${body}</div></details>`;
   const valRow=f=>{
     const v=valMap.get(f.id);
@@ -1389,51 +1453,67 @@ function renderReportConfig(){
     }
     return h+`</div>`;
   };
-  const valBody=fields.length?`<div class="rc-list">${fields.map(valRow).join("")}</div>`:empty;
+  const valBody=(fields.length?`<div class="rc-list">${fields.map(valRow).join("")}</div>`:empty)+orderList("vals",rl.values.map(v=>v.id));
   const periodOpts=`<option value="">None</option>`+fields.map(f=>`<option value="${esc(f.id)}" ${f.id===rl.periodField?"selected":""}>${esc(f.label)}</option>`).join("");
   const fmts=["","MMM-yy","MM-yy","d-M-yy","dd-MM-yy","M-d-yy","MM-dd-yy","dd-MMM-yy","MMM-yyyy","MM-yyyy"];
+  const chk=(id,label,on)=>`<label class="check-item"><input id="${id}" type="checkbox" ${on?"checked":""}> ${label}</label>`;
   const optsBody=`<div class="field"><label>Date / period field</label><select id="rcPeriod">${periodOpts}</select><div class="field-hint">Sorts this field chronologically even when the Sheet stores it as text (for example May-26, Jun-26).</div></div>
     <div class="field"><label>Date display format</label><select id="rcPeriodFormat">${fmts.map(x=>`<option value="${x}" ${rl.periodFormat===x?"selected":""}>${x||"Keep source value"}</option>`).join("")}</select></div>
-    <label class="check-item"><input id="rcSerial" type="checkbox" ${rl.showSerialNumber?"checked":""}> Show serial number column</label>`;
+    <div class="rc-list">${chk("rcGrandRow","Grand total row",rl.showGrandRow)}${chk("rcGrandCol","Grand total column (when Columns are used)",rl.showGrandCol)}${chk("rcRowSub","Row subtotals (when Rows are nested)",rl.showRowSubtotals)}${chk("rcColSub","Column subtotals (when Columns are nested)",rl.showColSubtotals)}${chk("rcRepeat","Repeat row labels",rl.repeatRowLabels)}${chk("rcSerial","Show serial number column",rl.showSerialNumber)}</div>`;
   host.innerHTML=`<details class="instructions settings-collapsible" data-rc="config" ${rcOpen.config?"open":""}><summary><span>Report Config</span></summary><div class="collapsible-body">
-    ${panel("rows","Rows",rl.rowsFields.length,"Tick the fields to group by. They appear left to right in the order you tick them.",grid("rows",f=>inRows.has(f.id)))}
-    ${panel("cols","Columns",colMode?1:0,"Choose one field; its values become the column headings. Leave empty to show the Values fields as the columns.",grid("cols",f=>f.id===rl.columnsField))}
-    ${panel("vals","Values",rl.values.length,colMode?"A Columns field is chosen, so only one Values field can be selected (any field, numeric or not).":"Tick one or more fields and pick an aggregation for each. Each becomes its own column.",valBody)}
+    ${panel("rows","Rows",rl.rowsFields.length,"Tick the fields to group by. Several fields nest from left to right in the order listed.",grid("rows",f=>inRows.has(f.id))+orderList("rows",rl.rowsFields))}
+    ${panel("cols","Columns",rl.columnsFields.length,"Tick one or more fields; their values become the column headings and nest in the order listed. Leave empty to show the Values fields as the columns.",grid("cols",f=>inCols.has(f.id))+orderList("cols",rl.columnsFields))}
+    ${panel("vals","Values",rl.values.length,rl.columnsFields.length?"Tick one or more fields and pick an aggregation for each. With several, the value names appear as the innermost column level under every column heading.":"Tick one or more fields and pick an aggregation for each. Each becomes its own column.",valBody)}
     ${panel("filters","Filters",rl.filterFields.length,"Filter fields appear as chips in Report View. You can also filter any Rows, Columns or Values field from the ▾ in its header.",grid("filters",f=>inFilters.has(f.id)))}
-    ${panel("opts","Display options","","Date handling and serial numbers.",optsBody)}
+    ${panel("opts","Display options","","Totals, subtotals, labels and date handling.",optsBody)}
   </div></details>`;
+}
+function rcCommit(){
+  const rl=config.reportLayout;
+  rl.rowsField=rl.rowsFields[0]||null;rl.columnsField=rl.columnsFields[0]||null;rl.filterField=rl.filterFields[0]||null;
+  pruneFilters();persistFilters();
+  renderReportConfig();renderReportFilters();renderReportGrid();
 }
 function rcOnChange(e){
   const t=e.target,rl=normalizeReportLayout(config),rm=(a,id)=>a.filter(x=>x!==id);
+  const take=(id,keep)=>{ // a field lives in only one of Rows / Columns / Filters
+    if(keep!=="rows")rl.rowsFields=rm(rl.rowsFields,id);
+    if(keep!=="cols")rl.columnsFields=rm(rl.columnsFields,id);
+    if(keep!=="filters")rl.filterFields=rm(rl.filterFields,id);
+  };
   if(t.matches("[data-rc-area]")){
     const area=t.dataset.rcArea,id=t.value,on=t.checked;
-    if(area==="rows"){
-      if(on){rl.rowsFields=[...rm(rl.rowsFields,id),id];rl.filterFields=rm(rl.filterFields,id);if(rl.columnsField===id)rl.columnsField=null}
-      else rl.rowsFields=rm(rl.rowsFields,id);
-    }else if(area==="cols"){
-      if(on){rl.columnsField=id;rl.rowsFields=rm(rl.rowsFields,id);rl.filterFields=rm(rl.filterFields,id);rl.values=rl.values.slice(0,1)}
-      else if(rl.columnsField===id)rl.columnsField=null;
-    }else if(area==="filters"){
-      if(on){rl.filterFields=[...rm(rl.filterFields,id),id];rl.rowsFields=rm(rl.rowsFields,id);if(rl.columnsField===id)rl.columnsField=null}
-      else rl.filterFields=rm(rl.filterFields,id);
-    }else if(area==="vals"){
-      if(on){const entry={id,agg:defaultAggFor(id)};rl.values=rl.columnsField?[entry]:[...rl.values.filter(v=>v.id!==id),entry]}
-      else rl.values=rl.values.filter(v=>v.id!==id);
-    }
+    if(area==="rows"){if(on){take(id,"rows");rl.rowsFields=[...rm(rl.rowsFields,id),id]}else rl.rowsFields=rm(rl.rowsFields,id)}
+    else if(area==="cols"){if(on){take(id,"cols");rl.columnsFields=[...rm(rl.columnsFields,id),id]}else rl.columnsFields=rm(rl.columnsFields,id)}
+    else if(area==="filters"){if(on){take(id,"filters");rl.filterFields=[...rm(rl.filterFields,id),id]}else rl.filterFields=rm(rl.filterFields,id)}
+    else if(area==="vals"){if(on)rl.values=[...rl.values.filter(v=>v.id!==id),{id,agg:defaultAggFor(id)}];else rl.values=rl.values.filter(v=>v.id!==id)}
   }else if(t.matches("[data-rc-agg]")){
     const v=rl.values.find(x=>x.id===t.dataset.rcAgg);if(v)v.agg=t.value;
   }else if(t.id==="rcPeriod")rl.periodField=t.value||null;
   else if(t.id==="rcPeriodFormat")rl.periodFormat=t.value||"";
   else if(t.id==="rcSerial")rl.showSerialNumber=t.checked;
+  else if(t.id==="rcGrandRow")rl.showGrandRow=t.checked;
+  else if(t.id==="rcGrandCol")rl.showGrandCol=t.checked;
+  else if(t.id==="rcRowSub")rl.showRowSubtotals=t.checked;
+  else if(t.id==="rcColSub")rl.showColSubtotals=t.checked;
+  else if(t.id==="rcRepeat")rl.repeatRowLabels=t.checked;
   else return;
-  rl.rowsField=rl.rowsFields[0]||null;rl.filterField=rl.filterFields[0]||null;
-  pruneFilters();persistFilters();
-  renderReportConfig();renderReportFilters();renderReportGrid();
+  rcCommit();
+}
+function rcOnClick(e){
+  const b=e.target.closest("[data-rc-move]");if(!b||b.disabled)return;
+  const rl=normalizeReportLayout(config),area=b.dataset.rcMove,id=b.dataset.id,dir=+b.dataset.dir;
+  const arr=area==="rows"?rl.rowsFields:area==="cols"?rl.columnsFields:rl.values;
+  const i=arr.findIndex(x=>(area==="vals"?x.id:x)===id),j=i+dir;
+  if(i<0||j<0||j>=arr.length)return;
+  [arr[i],arr[j]]=[arr[j],arr[i]];
+  rcCommit();
 }
 (function initReportConfigEvents(){
   const host=document.getElementById("reportConfigHost");
   if(host){
     host.addEventListener("change",rcOnChange);
+    host.addEventListener("click",rcOnClick);
     host.addEventListener("toggle",e=>{const k=e.target?.dataset?.rc;if(k)rcOpen[k]=e.target.open},true);
   }
   const view=document.getElementById("reportViewSection");
@@ -1465,16 +1545,28 @@ function activeFilterLines(){
 function csvEscape(v){const s=String(v??"");return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s}
 function exportReportCSV(){
   const m=buildReportModel();
-  if(!m){toast("Choose Rows and Values in Report Config first.");return}
+  if(!m||m.tooMany){toast("Choose Rows and Values in Report Config first.");return}
   if(!reportRows.length){toast("Fetch the Google Sheet data before exporting the report.");return}
   const lines=activeFilterLines(),out=[];
   lines.forEach(x=>out.push(csvEscape(x)));
-  const rl=config.reportLayout,sn=rl.showSerialNumber,fmt=rl.periodFormat||"";
-  if(m.colF)out.push(csvEscape(`Values: ${m.vals[0].f.label} (${AGG_LABEL[m.vals[0].agg]}) by ${m.colF.label}`));
+  const rl=config.reportLayout,sn=rl.showSerialNumber,fmt=rl.periodFormat||"",D=m.depth,nR=m.rowFs.length;
+  if(m.colFs.length)out.push(csvEscape(`Values: ${m.vals.map(v=>`${v.f.label} (${AGG_LABEL[v.agg]})`).join(", ")} by ${m.colFs.map(f=>f.label).join(" > ")}`));
   const cell=v=>v===null||v===undefined?"":(typeof v==="number"?Math.round(v*100)/100:v);
-  out.push([...(sn?["#"]:[]),...m.rowFs.map(f=>f.label),...m.headers.map(h=>h.label)].map(csvEscape).join(","));
-  reportDisplayRows(m).forEach((item,i)=>out.push([...(sn?[i+1]:[]),...item.group.values.map((v,j)=>m.rowFs[j].id===m.periodId?formatDateLike(v,fmt):v),...m.matrix[item.index].map(cell)].map(csvEscape).join(",")));
-  out.push([...(sn?[""]:[]),"Grand total",...m.totals.map(cell)].map(csvEscape).join(","));
+  const lead=(sn?1:0)+nR;
+  for(let l=0;l<D;l++){
+    const first=l===D-1?[...(sn?["#"]:[]),...m.rowFs.map(f=>f.label)]:Array(lead).fill("");
+    out.push([...first,...m.specs.map(sp=>sp.path[l]?sp.path[l].label:"")].map(csvEscape).join(","));
+  }
+  const lab=(v,j)=>m.rowFs[j].id===m.periodId?formatDateLike(v,fmt):v;
+  let serial=0;
+  reportDisplayRows(m).forEach(line=>{
+    const labels=line.labels.map((v,j)=>lab(v,j));
+    let lead2;
+    if(line.kind==="sub"){lead2=[...labels.slice(0,line.level),labels[line.level]+" Total",...Array(nR-line.level-1).fill("")]}
+    else{serial++;lead2=labels}
+    out.push([...(sn?[line.kind==="data"?serial:""]:[]),...lead2,...line.cells.map(cell)].map(csvEscape).join(","));
+  });
+  if(rl.showGrandRow)out.push([...(sn?[""]:[]),"Grand total",...Array(nR-1).fill(""),...m.totals.map(cell)].map(csvEscape).join(","));
   downloadBlob(out.join("\n"),`grid-report-${new Date().toISOString().slice(0,10)}.csv`,"text/csv;charset=utf-8");
   toast("CSV exported");
 }
@@ -2310,6 +2402,38 @@ function reloadActive(skipRecover){
   renderHome(true);renderReport();renderSettings();updateChip();
   document.getElementById("aboutFormTitle").textContent=config.links.formTitle||"GRIDS";
 }
+/* An application counts as set up when ANY part of it is configured (form link, sheet link, fields, master data or report layout) - not only the Google Form link. */
+function appIsConfigured(){
+  const l=config.links||{},rl=config.reportLayout||{};
+  return !!(config.fields?.length||Object.values(l).some(v=>String(v||"").trim())||config.defaultValueRows?.length||rl.rowsFields?.length||rl.columnsFields?.length||rl.values?.length||rl.filterFields?.length||rl.sheetHeaders?.length);
+}
+/* Report-only apps (Google Sheet link but no form) land on the Report page. */
+function appHasForm(){return !!(config.fields?.length||String(config.links?.formViewUrl||"").trim())}
+function landingView(){return !appHasForm()&&String(config.links?.sheetUrl||"").trim()?"report":"home"}
+async function openActiveApp(){
+  if(!appIsConfigured()){await firstSetup();return}
+  hideWelcome();showView(landingView());
+}
+/* ---- topbar application switcher ---- */
+function closeAppMenu(){document.getElementById("appMenu")?.remove();document.removeEventListener("click",appMenuOutside,true)}
+function appMenuOutside(e){const m=document.getElementById("appMenu");if(m&&!m.contains(e.target)&&e.target.id!=="appChip")closeAppMenu()}
+function toggleAppMenu(){
+  if(document.getElementById("appMenu")){closeAppMenu();return}
+  const chip=document.getElementById("appChip"),r=chip.getBoundingClientRect();
+  const ids=reg.order.filter(i=>reg.apps[i]);
+  const m=document.createElement("div");m.id="appMenu";m.className="app-menu";m.setAttribute("role","menu");
+  m.style.top=(r.bottom+6)+"px";m.style.right=Math.max(8,window.innerWidth-r.right)+"px";
+  m.innerHTML=ids.map(i=>`<button type="button" role="menuitem" data-app="${i}" class="${i===reg.activeId?"cur":""}">${i===reg.activeId?"✓ ":""}${esc(appName(i))}</button>`).join("")+`<hr><button type="button" role="menuitem" data-manage="1">⚙ Manage applications…</button>`;
+  document.body.appendChild(m);
+  m.onclick=async e=>{
+    const b=e.target.closest("button");if(!b)return;
+    closeAppMenu();
+    if(b.dataset.manage){welcome(reg.activeId);return}
+    if(b.dataset.app===reg.activeId)return;
+    switchApp(b.dataset.app);await openActiveApp();
+  };
+  setTimeout(()=>document.addEventListener("click",appMenuOutside,true),0);
+}
 function switchApp(id){bindKeys(id);reg.activeId=id;reg.apps[id].openedAt=Date.now();regSave();reloadActive()}
 function hideWelcome(){document.getElementById("welcome")?.classList.remove("show")}
 async function restoreLast(){
@@ -2358,7 +2482,7 @@ function welcome(sel){
   <label class="check-item" style="margin-top:12px"><input type="checkbox" id="wlAuto" ${reg.autoOpen?"checked":""}> Open the last application automatically next time</label></div>`;
   w.classList.add("show");
   const $=id=>document.getElementById(id),cur=()=>$("wlSel").value;
-  $("wlOpen").onclick=async()=>{switchApp(cur());if(!config.fields.length&&!config.links.formViewUrl){await firstSetup();return}hideWelcome();showView("home")};
+  $("wlOpen").onclick=async()=>{switchApp(cur());await openActiveApp()};
   $("wlAuto").onchange=e=>{reg.autoOpen=e.target.checked;regSave()};
   $("wlBackup").onclick=exportAll;$("wlRestore").onclick=importAll;
   $("wlNew").onclick=async()=>{const n=await promptDialog("New application","Name of the new application","");if(n===null)return;const id=regAdd(n.trim()||"New application");reg.apps[id].named=!!n.trim();regSave();switchApp(id);hideWelcome();showView("settings")};
@@ -2370,9 +2494,10 @@ function welcome(sel){
     if(reg.activeId===id)switchApp(reg.order[0]);welcome()};
   if($("wlLegacy"))$("wlLegacy").onclick=()=>{try{const raw=localStorage.getItem("grid.config.v2");const c=JSON.parse(raw);const id=regAdd((c.links&&c.links.formTitle)||"From GRID");reg.apps[id].named=true;regSave();localStorage.setItem(appKeys(id)+"config",raw);const md=localStorage.getItem("grid.masterdata.v1");if(md)localStorage.setItem(appKeys(id)+"masterdata",md);toast("Imported from GRID (original left untouched)");welcome(id)}catch(e){toast("Could not read GRID settings")}};
 }
-document.getElementById("appChip").onclick=()=>welcome(reg.activeId);
+document.getElementById("appChip").onclick=toggleAppMenu;
+document.getElementById("settingsAppsBtn")?.addEventListener("click",()=>welcome(reg.activeId));
 document.getElementById("themeBtn").onclick=()=>applyTheme(!isDarkTheme(),true);
-applyTheme(isDarkTheme(),false);updateChip();if(!reg.autoOpen)welcome();
+applyTheme(isDarkTheme(),false);updateChip();if(!reg.autoOpen)welcome();else if(appIsConfigured()&&landingView()==="report")showView("report");
 setupServiceWorker();
 
 document.addEventListener("click",e=>{
