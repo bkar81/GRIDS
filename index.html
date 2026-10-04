@@ -1329,12 +1329,14 @@ function renderReportGrid(){
 function renderReportFilters(){
   const wrap=document.getElementById("reportFilters");
   const filterFields=(config.reportLayout.filterFields||[]).filter(fid=>modelField(fid));
-  if(!filterFields.length){wrap.innerHTML="";return}
-  wrap.innerHTML=filterFields.map(fid=>{
-    const f=fieldById(fid), vals=activeFilters[fid]||[];
+  const extra=Object.keys(activeFilters).filter(id=>id!=="_copy"&&activeFilters[id]?.length&&!filterFields.includes(id)&&modelField(id));
+  if(!filterFields.length&&!extra.length){wrap.innerHTML="";return}
+  const chip=(fid,note)=>{
+    const f=fieldById(fid),vals=activeFilters[fid]||[];
     const label=vals.length?`${f.label}: ${vals.length===1?filterValueLabel(vals[0]):vals.length+" selected"}`:`${f.label}: All`;
-    return `<button class="filter-chip ${vals.length?"active":""}" data-filter="${esc(fid)}">${esc(label)} ▾</button>`;
-  }).join("");
+    return `<button class="filter-chip ${vals.length?"active":""}" data-filter="${esc(fid)}" ${note?`title="${esc(note)}"`:""}>${esc(label)} ▾</button>`;
+  };
+  wrap.innerHTML=filterFields.map(fid=>chip(fid)).join("")+extra.map(fid=>chip(fid,"Filter applied from the report header")).join("");
   wrap.querySelectorAll("[data-filter]").forEach(btn=>{
     btn.onclick=()=>openFilterPicker(btn.dataset.filter);
   });
@@ -1348,19 +1350,23 @@ async function openFilterPicker(fid){
   // so records with no value can be filtered in or out.
   const hasBlank=reportRows.some(r=>sheetValue(r,f).trim()==="")||selected.has(BLANK_TOKEN);
   if(hasBlank)values.unshift(BLANK_TOKEN);
+  const noFilter=!selected.size;
   const root=document.getElementById("modalRoot");
-  root.innerHTML=`<div class="modal-backdrop"><div class="modal center"><h3>${esc(f.label)}</h3><p>Choose one or more values from the fetched Sheet data; All means no filter.</p>
-    <label class="check-item" style="margin-bottom:7px"><input type="checkbox" id="filterAll" ${selected.size?"":"checked"}> All</label>
-    <div class="check-grid">${values.map(v=>`<label class="check-item"><input type="checkbox" class="filterOpt" value="${esc(v)}" ${selected.has(v)?"checked":""}> ${esc(filterValueLabel(v))}</label>`).join("")}</div>
+  root.innerHTML=`<div class="modal-backdrop"><div class="modal center"><h3>${esc(f.label)}</h3><p>Tick the values to show in the report. <b>All</b> is ticked when nothing is filtered; untick the values you don't need.</p>
+    <label class="check-item" style="margin-bottom:7px"><input type="checkbox" id="filterAll"> All</label>
+    <div class="check-grid">${values.map(v=>`<label class="check-item"><input type="checkbox" class="filterOpt" value="${esc(v)}" ${(noFilter||selected.has(v))?"checked":""}> ${esc(filterValueLabel(v))}</label>`).join("")}</div>
     <div class="modal-actions"><button class="btn" id="filterCancel">Cancel</button><button class="btn primary" id="filterApply">Apply</button></div>
   </div></div>`;
-  const all=root.querySelector("#filterAll");
-  root.querySelectorAll(".filterOpt").forEach(c=>c.addEventListener("change",()=>{if(c.checked)all.checked=false}));
-  all.onchange=()=>{if(all.checked)root.querySelectorAll(".filterOpt").forEach(c=>c.checked=false)};
+  const all=root.querySelector("#filterAll"),opts=[...root.querySelectorAll(".filterOpt")],apply=root.querySelector("#filterApply");
+  // "All" is ticked exactly when every value is ticked; Apply needs at least one value.
+  const sync=()=>{const n=opts.filter(c=>c.checked).length;all.checked=opts.length>0&&n===opts.length;apply.disabled=n===0;apply.title=n===0?"Tick at least one value":""};
+  opts.forEach(c=>c.addEventListener("change",sync));
+  all.addEventListener("change",()=>{opts.forEach(c=>c.checked=all.checked);sync()});
+  sync();
   root.querySelector("#filterCancel").onclick=()=>root.innerHTML="";
-  root.querySelector("#filterApply").onclick=()=>{
-    const vals=[...root.querySelectorAll(".filterOpt:checked")].map(x=>x.value);
-    if(vals.length)activeFilters[fid]=vals;else delete activeFilters[fid];
+  apply.onclick=()=>{
+    const vals=opts.filter(c=>c.checked).map(x=>x.value);
+    if(vals.length&&vals.length<opts.length)activeFilters[fid]=vals;else delete activeFilters[fid]; // everything ticked = no filter
     root.innerHTML="";persistFilters();renderReportFilters();renderReportGrid();
   };
 }
@@ -1497,19 +1503,36 @@ function rcCommit(){
   pruneFilters();persistFilters();
   renderReportConfig();renderReportFilters();renderReportGrid();
 }
-function rcOnChange(e){
+async function rcOnChange(e){
   const t=e.target,rl=normalizeReportLayout(config),rm=(a,id)=>a.filter(x=>x!==id);
+  const usedIds=()=>new Set([...rl.rowsFields,...rl.columnsFields,...rl.values.map(v=>v.id),...rl.filterFields].filter(Boolean));
+  const isArea=t.matches("[data-rc-area]");
+  const snap=isArea?clone({rowsFields:rl.rowsFields,columnsFields:rl.columnsFields,filterFields:rl.filterFields,values:rl.values}):null;
+  const beforeUsed=usedIds(),beforeFilters=new Set(rl.filterFields);
   const take=(id,keep)=>{ // a field lives in only one of Rows / Columns / Filters
     if(keep!=="rows")rl.rowsFields=rm(rl.rowsFields,id);
     if(keep!=="cols")rl.columnsFields=rm(rl.columnsFields,id);
     if(keep!=="filters")rl.filterFields=rm(rl.filterFields,id);
   };
-  if(t.matches("[data-rc-area]")){
+  if(isArea){
     const area=t.dataset.rcArea,id=t.value,on=t.checked;
     if(area==="rows"){if(on){take(id,"rows");rl.rowsFields=[...rm(rl.rowsFields,id),id]}else rl.rowsFields=rm(rl.rowsFields,id)}
     else if(area==="cols"){if(on){take(id,"cols");rl.columnsFields=[...rm(rl.columnsFields,id),id]}else rl.columnsFields=rm(rl.columnsFields,id)}
     else if(area==="filters"){if(on){take(id,"filters");rl.filterFields=[...rm(rl.filterFields,id),id]}else rl.filterFields=rm(rl.filterFields,id)}
     else if(area==="vals"){if(on)rl.values=[...rl.values.filter(v=>v.id!==id),{id,agg:defaultAggFor(id)}];else rl.values=rl.values.filter(v=>v.id!==id)}
+    // A filtered field that leaves the Filters list, or the report, would otherwise keep filtering invisibly.
+    const afterUsed=usedIds(),afterFilters=new Set(rl.filterFields);
+    const lost=Object.keys(activeFilters).filter(k=>k!=="_copy"&&activeFilters[k]?.length&&((beforeFilters.has(k)&&!afterFilters.has(k))||(beforeUsed.has(k)&&!afterUsed.has(k))));
+    if(lost.length){
+      const nm=k=>fieldById(k)?.label||String(k).replace(/^col:/,"");
+      const what=k=>{const v=activeFilters[k].map(filterValueLabel);return v.length<=2?v.join(", "):v.length+" values"};
+      const msg=lost.length===1
+        ?`"${nm(lost[0])}" is currently filtered (showing: ${what(lost[0])}). Removing it from here will clear that filter, and the report will show all of its values again.`
+        :`These fields are currently filtered: ${lost.map(k=>`${nm(k)} (${what(k)})`).join("; ")}. Removing them from here will clear those filters, and the report will show all of their values again.`;
+      const ok=await confirmDialog("Clear this filter?",msg,"Proceed");
+      if(!ok){Object.assign(rl,snap);renderReportConfig();return}
+      lost.forEach(k=>delete activeFilters[k]);
+    }
   }else if(t.matches("[data-rc-agg]")){
     const v=rl.values.find(x=>x.id===t.dataset.rcAgg);if(v)v.agg=t.value;
   }else if(t.id==="rcPeriod")rl.periodField=t.value||null;
