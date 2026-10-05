@@ -340,12 +340,12 @@ html[data-style]{--text-dim:var(--text-muted);--accent-ink:var(--on-accent);--bo
       <div class="page-subtitle">Report</div>
       <div id="reportAuth"></div>
       <div id="reportBody" class="hidden">
-        <div class="toolbar">
+        <div class="toolbar" style="flex-wrap:nowrap;margin-bottom:6px">
           <button class="btn primary" id="fetchReport">↓ Fetch Sheet data</button>
           <div class="toolbar-spacer"></div>
-          <span id="reportStatus" class="small"></span>
           <button class="btn" id="exportCsv" disabled>⇩ Export as CSV</button>
         </div>
+        <div id="reportStatus" class="small" style="margin-bottom:10px"></div>
         <div id="reportConfigHost"></div>
         <details class="instructions settings-collapsible" id="reportViewSection" open>
           <summary><span>Report View</span></summary>
