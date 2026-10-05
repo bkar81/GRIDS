@@ -68,7 +68,7 @@ main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:76px;-
 .submit-btn:active{transform:translateY(1px)}.submit-btn:disabled{opacity:.6;cursor:wait}
 .inline-message{display:none;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.45;margin-bottom:12px}.inline-message.show{display:block}.inline-message.success{background:var(--success-soft);color:var(--success);border:1px solid #d9c28a}.inline-message.error{background:var(--danger-soft);color:var(--danger);border:1px solid #f1c6c6}.inline-message.warn{background:var(--warn-soft);color:var(--warn);border:1px solid #efd99a}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:520px;margin:0 auto;display:flex;background:var(--tabbar-bg);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 14px rgba(31,55,87,.06)}
-.tabbar button{flex:1;border:0;background:none;padding:9px 0 8px;color:var(--text-faint);font-size:10px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px}.tabbar button .ic{font-size:17px;line-height:1}.tabbar button.active{color:var(--accent)}
+.tabbar button{flex:1;border:0;background:none;padding:9px 0 8px;color:var(--text-faint);font-size:10px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px}.tabbar button .ic{font-size:21px;line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}.tabbar button.active{color:var(--accent)}
 .toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}.toolbar-spacer{flex:1}
 .btn{border:1px solid var(--accent);background:var(--accent);border-radius:9px;padding:8px 11px;font-size:12px;font-weight:800;color:#fff}.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.ghost{background:var(--surface-2)}.btn.danger{background:var(--danger-soft);border-color:#f1c6c6;color:var(--danger)}.btn:disabled{opacity:.5;cursor:not-allowed}
 .filter-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px;margin-bottom:9px}.compact-select{min-width:150px;flex:0 1 auto;padding:8px 28px 8px 10px;border:1px solid #c8d8fa;border-radius:10px;background:var(--surface-2);color:var(--text);font:inherit;font-size:12px}
@@ -407,10 +407,10 @@ html[data-style]{--text-dim:var(--text-muted);--accent-ink:var(--on-accent);--bo
   </main>
 
   <nav class="tabbar" id="tabbar">
-    <button class="active" data-view="home"><span class="ic">⌂</span><span>Home</span></button>
-    <button data-view="report"><span class="ic">▦</span><span>Report</span></button>
-    <button data-view="settings"><span class="ic">⚙</span><span>Settings</span></button>
-    <button data-view="about"><span class="ic">ⓘ</span><span>About</span></button>
+    <button class="active" data-view="home"><span class="ic">🏠</span><span>Home</span></button>
+    <button data-view="report"><span class="ic">📊</span><span>Report</span></button>
+    <button data-view="settings"><span class="ic">⚙️</span><span>Settings</span></button>
+    <button data-view="about"><span class="ic">ℹ️</span><span>About</span></button>
   </nav>
 </div>
 
@@ -1509,16 +1509,15 @@ async function rcOnChange(e){
   const isArea=t.matches("[data-rc-area]");
   const snap=isArea?clone({rowsFields:rl.rowsFields,columnsFields:rl.columnsFields,filterFields:rl.filterFields,values:rl.values}):null;
   const beforeUsed=usedIds(),beforeFilters=new Set(rl.filterFields);
-  const take=(id,keep)=>{ // a field lives in only one of Rows / Columns / Filters
-    if(keep!=="rows")rl.rowsFields=rm(rl.rowsFields,id);
-    if(keep!=="cols")rl.columnsFields=rm(rl.columnsFields,id);
-    if(keep!=="filters")rl.filterFields=rm(rl.filterFields,id);
+  const take=(id,keep)=>{ // a field can sit in Rows or Columns, never both; Filters is independent
+    if(keep==="rows")rl.columnsFields=rm(rl.columnsFields,id);
+    if(keep==="cols")rl.rowsFields=rm(rl.rowsFields,id);
   };
   if(isArea){
     const area=t.dataset.rcArea,id=t.value,on=t.checked;
     if(area==="rows"){if(on){take(id,"rows");rl.rowsFields=[...rm(rl.rowsFields,id),id]}else rl.rowsFields=rm(rl.rowsFields,id)}
     else if(area==="cols"){if(on){take(id,"cols");rl.columnsFields=[...rm(rl.columnsFields,id),id]}else rl.columnsFields=rm(rl.columnsFields,id)}
-    else if(area==="filters"){if(on){take(id,"filters");rl.filterFields=[...rm(rl.filterFields,id),id]}else rl.filterFields=rm(rl.filterFields,id)}
+    else if(area==="filters"){if(on)rl.filterFields=[...rm(rl.filterFields,id),id];else rl.filterFields=rm(rl.filterFields,id)}
     else if(area==="vals"){if(on)rl.values=[...rl.values.filter(v=>v.id!==id),{id,agg:defaultAggFor(id)}];else rl.values=rl.values.filter(v=>v.id!==id)}
     // A filtered field that leaves the Filters list, or the report, would otherwise keep filtering invisibly.
     const afterUsed=usedIds(),afterFilters=new Set(rl.filterFields);
