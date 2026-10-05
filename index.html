@@ -69,6 +69,7 @@ main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:76px;-
 .inline-message{display:none;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.45;margin-bottom:12px}.inline-message.show{display:block}.inline-message.success{background:var(--success-soft);color:var(--success);border:1px solid #d9c28a}.inline-message.error{background:var(--danger-soft);color:var(--danger);border:1px solid #f1c6c6}.inline-message.warn{background:var(--warn-soft);color:var(--warn);border:1px solid #efd99a}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;max-width:520px;margin:0 auto;display:flex;background:var(--tabbar-bg);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 14px rgba(31,55,87,.06)}
 .tabbar button{flex:1;border:0;background:none;padding:9px 0 8px;color:var(--text-faint);font-size:10px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px}.tabbar button .ic{font-size:21px;line-height:1;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}.tabbar button.active{color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
 .toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}.toolbar-spacer{flex:1}
 .btn{border:1px solid var(--accent);background:var(--accent);border-radius:9px;padding:8px 11px;font-size:12px;font-weight:800;color:#fff}.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.ghost{background:var(--surface-2)}.btn.danger{background:var(--danger-soft);border-color:#f1c6c6;color:var(--danger)}.btn:disabled{opacity:.5;cursor:not-allowed}
 .filter-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px;margin-bottom:9px}.compact-select{min-width:150px;flex:0 1 auto;padding:8px 28px 8px 10px;border:1px solid #c8d8fa;border-radius:10px;background:var(--surface-2);color:var(--text);font:inherit;font-size:12px}
@@ -343,6 +344,7 @@ html[data-style]{--text-dim:var(--text-muted);--accent-ink:var(--on-accent);--bo
           <button class="btn primary" id="fetchReport">↓ Fetch Sheet data</button>
           <div class="toolbar-spacer"></div>
           <span id="reportStatus" class="small"></span>
+          <button class="btn" id="exportCsv" disabled>⇩ Export as CSV</button>
         </div>
         <div id="reportConfigHost"></div>
         <details class="instructions settings-collapsible" id="reportViewSection" open>
@@ -352,8 +354,7 @@ html[data-style]{--text-dim:var(--text-muted);--accent-ink:var(--on-accent);--bo
             <div class="toolbar">
               <label class="check-item" style="margin:0"><input type="checkbox" id="hideAllBlankRows" checked> Hide blank rows</label>
               <div class="toolbar-spacer"></div>
-              <button class="btn" id="copyReport">▣ Copy</button>
-              <button class="btn" id="exportCsv">⇩ Export</button>
+              <button class="btn" id="copyReport" disabled>▣ Share as Image</button>
             </div>
             <div id="reportGridWrap"></div>
           </div>
@@ -365,8 +366,8 @@ html[data-style]{--text-dim:var(--text-muted);--accent-ink:var(--on-accent);--bo
       <div class="page-title">Settings</div>
       <div class="page-subtitle">Private configuration · owner access</div>
       <div class="card theme-card">
-        <div><div class="theme-title">Theme</div><div class="theme-subtitle">Choose how GRIDS looks across all pages.</div></div>
-        <label class="theme-switch" title="Toggle dark theme"><input type="checkbox" id="darkThemeToggle"><span class="theme-switch-track"><span class="theme-switch-knob"></span></span><span class="theme-switch-label">Light</span></label>
+        <div><div class="theme-title">Allow pinch-zoom</div><div class="theme-subtitle">Off by default. Turn on when you need to zoom in with two fingers.</div></div>
+        <label class="theme-switch" title="Allow pinch-zoom"><input type="checkbox" id="pinchZoomToggle"><span class="theme-switch-track"><span class="theme-switch-knob"></span></span></label>
       </div>
       <div class="card theme-card">
         <div><div class="theme-title">Applications</div><div class="theme-subtitle">Switch, create, rename or back up applications.</div></div>
@@ -821,7 +822,7 @@ function masterOptionsForField(f,form){
   const ctx=masterContextFromForm(form);
   const out=[];const seen=new Set();
   rows.forEach(r=>{if(masterRowApplies(r,ctx)){const v=String(r.fieldValue??"").trim();if(v&&!seen.has(v)){seen.add(v);out.push(v)}}});
-  return out;
+  return smartSortValues(out);
 }
 function hasMasterRowsForField(f){return masterRowsForField(f.label).length>0;}
 function refreshHomeMasterOptions(form){
@@ -874,7 +875,7 @@ function renderHomeField(f){
     const opts=masterOptionsForField(f,document.getElementById("homeForm"));
     control=`<select name="${esc(f.id)}"><option value="">Choose ▾</option>${opts.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("")}</select>`;
   }else if(defaults.length){
-    control=`<select name="${esc(f.id)}"><option value="">Choose ▾</option>${defaults.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("")}</select>`;
+    control=`<select name="${esc(f.id)}"><option value="">Choose ▾</option>${smartSortValues(defaults).map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("")}</select>`;
   }else if(f.dataType==="choice"){
     const opts=(f.options||[]).map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("");
     if(f.choiceDisplay==="radio") control=`<div class="choice-list radio-list">${(f.options||[]).map(o=>`<label><input type="radio" name="${esc(f.id)}" value="${esc(o)}"> ${esc(o)}</label>`).join("")}</div>`;
@@ -1116,7 +1117,7 @@ function rowsOrder(f,rows=reportRows){
 }
 const MONTH_NAMES=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const MONTH_SHORT=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-function parseDateLike(value){
+function parseDateLike(value,strict=false){
   const raw=String(value??"").trim();
   if(!raw)return null;
   let m;
@@ -1143,6 +1144,7 @@ function parseDateLike(value){
     const dt=new Date(y,mo,d);
     if(dt.getFullYear()===y&&dt.getMonth()===mo&&dt.getDate()===d)return dt;
   }
+  if(strict)return null;
   const parsed=Date.parse(raw);
   return Number.isNaN(parsed)?null:new Date(parsed);
 }
@@ -1153,6 +1155,15 @@ function formatDateLike(value,format){
   const y=dt.getFullYear(),yy=String(y).slice(-2),m=dt.getMonth()+1,d=dt.getDate();
   const tokens={yyyy:String(y),yy:yy,M:String(m),MM:String(m).padStart(2,"0"),d:String(d),dd:String(d).padStart(2,"0"),MMM:MONTH_SHORT[m-1]};
   return format.replace(/yyyy|MMM|MM|dd|yy|M|d/g,t=>tokens[t]);
+}
+/* Default ascending order for lists of values (filters, Home dropdowns), whatever order they are stored in the Sheet:
+   all numbers -> numeric order; all dates (Sep-26, 05/10/2026 ...) -> chronological; anything else -> natural A-Z. */
+function smartSortValues(values){
+  const arr=[...values],nb=arr.filter(v=>String(v).trim()!=="");
+  const txt=(a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true,sensitivity:"base"});
+  if(nb.length&&nb.every(v=>Number.isFinite(parseSheetNumber(v))))return arr.sort((a,b)=>parseSheetNumber(a)-parseSheetNumber(b)||txt(a,b));
+  if(nb.length>1&&nb.every(v=>parseDateLike(v,true)))return arr.sort((a,b)=>parseDateLike(a,true)-parseDateLike(b,true)||txt(a,b));
+  return arr.sort(txt);
 }
 function dateField(){return fieldById(config.reportLayout.periodField)}
 function dateAwareCompare(a,b,f){
@@ -1276,7 +1287,12 @@ function buildReportModel(){
 function reportDisplayRows(m){
   return m.lines.filter(l=>!reportHideAllBlankRows||l.cells.some(v=>v!==null&&v!==undefined&&v!==""));
 }
-function renderReportGrid(){
+function updateReportActions(){
+  const has=!!document.getElementById("reportCapture");
+  ["exportCsv","copyReport"].forEach(id=>{const b=document.getElementById(id);if(b)b.disabled=!has});
+}
+function renderReportGrid(){renderReportGridBody();updateReportActions()}
+function renderReportGridBody(){
   const wrap=document.getElementById("reportGridWrap"),m=buildReportModel();
   if(!reportHeaders.length){wrap.innerHTML=`<div class="card report-empty">Click <b>Fetch</b> to read the linked Google Sheet. GRIDS does not read the Sheet merely because a Sheet link is configured.</div>`;return}
   if(!m){wrap.innerHTML=`<div class="card report-empty">In <b>Report Config</b>, tick at least one field under Rows and one under Values.</div>`;return}
@@ -1344,7 +1360,7 @@ function renderReportFilters(){
 async function openFilterPicker(fid){
   const f=modelField(fid);if(!f)return;
   // Report filter values always come from the fetched Google Sheet.
-  const values=uniqueSheetValues(f).filter(v=>v.trim()!=="");
+  const values=smartSortValues(uniqueSheetValues(f).filter(v=>v.trim()!==""));
   const selected=new Set(activeFilters[fid]||[]);
   // Offer "(Blank)" when this column has empty cells (or it is already selected),
   // so records with no value can be filtered in or out.
@@ -1645,10 +1661,10 @@ async function reportImageBlob(includeFilters){
 
 async function copyReport(){
   if(!document.getElementById("reportCapture")){
-    toast("Fetch the Google Sheet and configure the Report before copying.");
+    toast("Fetch the Google Sheet and configure the Report before sharing an image.");
     return;
   }
-  const first=await choiceDialog("Copy report","Choose what to include.",[
+  const first=await choiceDialog("Share as image","Choose what to include.",[
     {label:"Grid only",value:"grid",primary:true},{label:"Grid + filters",value:"filters"}
   ]);if(!first)return;
   let includeFilters=first==="filters";
@@ -1704,11 +1720,30 @@ function bindThemeToggle(){
   applyTheme(isDarkTheme(),false);
 }
 
+/* ===================== PINCH-ZOOM ===================== */
+const ZOOM_KEY="grids.pinchzoom.v1";
+const VIEWPORT_BASE="width=device-width, initial-scale=1, viewport-fit=cover";
+function pinchZoomAllowed(){try{return localStorage.getItem(ZOOM_KEY)==="on"}catch(e){return false}}
+function applyPinchZoom(on){
+  const m=document.querySelector('meta[name="viewport"]');
+  if(m)m.setAttribute("content",on?VIEWPORT_BASE:VIEWPORT_BASE+", maximum-scale=1, user-scalable=no");
+  document.documentElement.style.touchAction=on?"":"pan-x pan-y";
+  document.body.style.touchAction=on?"":"pan-x pan-y";
+  window.__pinchOn=!!on;
+}
+document.addEventListener("gesturestart",e=>{if(!window.__pinchOn)e.preventDefault()},{passive:false}); // iOS Safari
+function bindZoomToggle(){
+  const t=document.getElementById("pinchZoomToggle");if(!t)return;
+  t.checked=pinchZoomAllowed();
+  t.onchange=()=>{try{localStorage.setItem(ZOOM_KEY,t.checked?"on":"off")}catch(e){}applyPinchZoom(t.checked);toast(t.checked?"Pinch-zoom enabled":"Pinch-zoom disabled")};
+}
+applyPinchZoom(pinchZoomAllowed());
+
 /* ===================== SETTINGS UI ===================== */
 let settingsTab="links";
 function renderSettings(){
   const auth=document.getElementById("settingsAuth"),priv=document.getElementById("settingsPrivate"),when=syncConfig.lastSyncedAt?new Date(syncConfig.lastSyncedAt).toLocaleString():"Never";
-  bindThemeToggle();
+  bindThemeToggle();bindZoomToggle();
   // Settings configuration is local to this device and must remain visible even
   // before Google authentication. Google access is required only for Sheet/Drive
   // operations (Report fetch and Sync).
@@ -2403,11 +2438,11 @@ document.querySelectorAll(".tabbar button").forEach(b=>b.onclick=()=>showView(b.
 document.getElementById("fetchReport").onclick=()=>fetchReportData("fetchReport");
 document.getElementById("copyReport").onclick=null;
 document.getElementById("exportCsv").onclick=null;
-document.addEventListener("click",e=>{
+document.addEventListener("click",async e=>{
   const copy=e.target.closest("#copyReport");
-  if(copy){e.preventDefault();copyReport();return}
+  if(copy){e.preventDefault();if(!copy.disabled)copyReport();return}
   const exp=e.target.closest("#exportCsv");
-  if(exp){e.preventDefault();exportReportCSV();return}
+  if(exp){e.preventDefault();if(!exp.disabled&&await confirmDialog("Export as CSV","Do you want to Export the report view as csv?","Confirm"))exportReportCSV();return}
 });
 
 /* ===================== PWA / UPDATE SUPPORT ===================== */
